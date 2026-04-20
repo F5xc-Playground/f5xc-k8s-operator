@@ -3,8 +3,10 @@
 CONTROLLER_GEN ?= $(shell which controller-gen)
 ENVTEST ?= $(shell which setup-envtest)
 
+ENVTEST_ASSETS_DIR ?= $(shell $(ENVTEST) use -p path 2>/dev/null)
+
 test:
-	go test ./... -v -count=1
+	KUBEBUILDER_ASSETS="$(ENVTEST_ASSETS_DIR)" go test ./... -v -count=1
 
 test-contract:
 	go test ./... -v -count=1 -tags=contract
