@@ -8,34 +8,39 @@ import (
 )
 
 // EndpointRateLimiter manages per-endpoint token-bucket rate limiters.
+// Each unique endpoint string gets its own rate.Limiter so that one slow
+// endpoint cannot starve requests to another.
 type EndpointRateLimiter struct {
-	cfg      RateLimitConfig
-	mu       sync.Mutex
-	limiters map[string]*rate.Limiter
+	config   RateLimitConfig
+	limiters sync.Map // map[string]*rate.Limiter
 }
 
-// NewEndpointRateLimiter creates an EndpointRateLimiter backed by cfg.
+// NewEndpointRateLimiter returns an EndpointRateLimiter configured with cfg.
 func NewEndpointRateLimiter(cfg RateLimitConfig) *EndpointRateLimiter {
-	return &EndpointRateLimiter{
-		cfg:      cfg,
-		limiters: make(map[string]*rate.Limiter),
-	}
+	return &EndpointRateLimiter{config: cfg}
 }
 
-// Wait blocks until a token is available for the given endpoint, or ctx is done.
+// Wait blocks until a token is available for endpoint, or until ctx is done.
+// It returns ctx.Err() if the context is cancelled before a token is granted.
 func (e *EndpointRateLimiter) Wait(ctx context.Context, endpoint string) error {
-	e.mu.Lock()
-	l, ok := e.limiters[endpoint]
-	if !ok {
-		rps := e.cfg.DefaultRPS
-		burst := e.cfg.DefaultBurst
-		if ov, found := e.cfg.Overrides[endpoint]; found {
-			rps = ov.RPS
-			burst = ov.Burst
-		}
-		l = rate.NewLimiter(rate.Limit(rps), burst)
-		e.limiters[endpoint] = l
+	return e.getLimiter(endpoint).Wait(ctx)
+}
+
+// getLimiter returns the rate.Limiter for endpoint, creating one on first use.
+// Per-endpoint overrides in config.Overrides take precedence over the defaults.
+func (e *EndpointRateLimiter) getLimiter(endpoint string) *rate.Limiter {
+	if v, ok := e.limiters.Load(endpoint); ok {
+		return v.(*rate.Limiter)
 	}
-	e.mu.Unlock()
-	return l.Wait(ctx)
+
+	rps := e.config.DefaultRPS
+	burst := e.config.DefaultBurst
+	if ov, found := e.config.Overrides[endpoint]; found {
+		rps = ov.RPS
+		burst = ov.Burst
+	}
+
+	newL := rate.NewLimiter(rate.Limit(rps), burst)
+	actual, _ := e.limiters.LoadOrStore(endpoint, newL)
+	return actual.(*rate.Limiter)
 }
