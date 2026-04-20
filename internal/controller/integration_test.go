@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
 	"github.com/kreynolds/f5xc-k8s-operator/internal/xcclient"
 	"github.com/kreynolds/f5xc-k8s-operator/internal/xcclient/testutil"
 	"github.com/kreynolds/f5xc-k8s-operator/internal/xcclientset"
-	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

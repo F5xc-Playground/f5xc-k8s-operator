@@ -7,8 +7,8 @@ import (
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestBuildOriginPoolCreate_BasicFields(t *testing.T) {
@@ -160,4 +160,3 @@ func TestBuildDesiredSpecJSON(t *testing.T) {
 	_, hasMetadata := spec["metadata"]
 	assert.False(t, hasMetadata, "spec JSON must not contain metadata")
 }
-

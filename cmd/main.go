@@ -37,14 +37,14 @@ func init() {
 
 func main() {
 	var (
-		tenantURL                string
-		credentialsSecret        string
-		credentialsSecretNS      string
-		rateLimitRPS             float64
-		rateLimitBurst           int
-		metricsBindAddress       string
-		healthProbeBindAddress   string
-		enableLeaderElection     bool
+		tenantURL              string
+		credentialsSecret      string
+		credentialsSecretNS    string
+		rateLimitRPS           float64
+		rateLimitBurst         int
+		metricsBindAddress     string
+		healthProbeBindAddress string
+		enableLeaderElection   bool
 	)
 
 	flag.StringVar(&tenantURL, "tenant-url", "", "F5 XC tenant URL (required)")
@@ -170,10 +170,10 @@ func buildClientSet(
 
 // credentialWatcher reconciles credential Secret changes by rebuilding the XC client.
 type credentialWatcher struct {
-	k8sClient client.Client
-	cs        *xcclientset.ClientSet
-	log       logr.Logger
-	secretNS  string
+	k8sClient  client.Client
+	cs         *xcclientset.ClientSet
+	log        logr.Logger
+	secretNS   string
 	secretName string
 	tenantURL  string
 	rateLimits xcclient.RateLimitConfig
