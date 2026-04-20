@@ -7,11 +7,6 @@ import (
 	"net/http"
 )
 
-// Note: extractRawSpec and unmarshalList are defined in helpers.go.
-
-// Ensure fmt is used even if no format errors remain below.
-var _ = fmt.Sprintf
-
 // ---------------------------------------------------------------------------
 // Origin server types (OneOf pattern — exactly one field is set per instance)
 // ---------------------------------------------------------------------------
