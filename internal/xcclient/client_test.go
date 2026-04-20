@@ -17,6 +17,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestClient_ImplementsXCClient is a compile-time check that *Client satisfies
+// the XCClient interface. If *Client is missing any method the file will not
+// compile.
+func TestClient_ImplementsXCClient(t *testing.T) {
+	var _ xcclient.XCClient = (*xcclient.Client)(nil)
+}
+
 // validAPITokenConfig returns a minimal valid Config using APIToken auth.
 func validAPITokenConfig(serverURL string) xcclient.Config {
 	return xcclient.Config{

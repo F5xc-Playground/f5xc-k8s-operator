@@ -73,6 +73,12 @@ func (c *Client) SetBaseDelay(d time.Duration) {
 	c.baseDelay = d
 }
 
+// ClientNeedsUpdate reports whether the current server-side object differs from
+// the desired state in any user-managed field. It delegates to NeedsUpdate.
+func (c *Client) ClientNeedsUpdate(current, desired json.RawMessage) (bool, error) {
+	return NeedsUpdate(current, desired)
+}
+
 // Do is the exported wrapper around the private do() method. It exists so that
 // tests in the xcclient_test package can exercise request dispatch without
 // needing resource-specific wrappers.
