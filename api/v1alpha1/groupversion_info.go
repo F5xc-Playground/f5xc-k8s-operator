@@ -1,3 +1,6 @@
+// +kubebuilder:object:generate=true
+// +groupName=xc.f5.com
+
 package v1alpha1
 
 import (
