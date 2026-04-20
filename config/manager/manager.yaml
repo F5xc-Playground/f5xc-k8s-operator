@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: f5xc-operator
+  namespace: system
+  labels:
+    app: f5xc-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: f5xc-operator
+  template:
+    metadata:
+      labels:
+        app: f5xc-operator
+    spec:
+      serviceAccountName: f5xc-operator
+      containers:
+        - name: manager
+          image: f5xc-operator:latest
+          args:
+            - --tenant-url=$(TENANT_URL)
+            - --credentials-secret=$(CREDENTIALS_SECRET)
+            - --credentials-secret-namespace=$(POD_NAMESPACE)
+            - --leader-elect
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: TENANT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: f5xc-operator-config
+                  key: tenant-url
+            - name: CREDENTIALS_SECRET
+              valueFrom:
+                configMapKeyRef:
+                  name: f5xc-operator-config
+                  key: credentials-secret
+          ports:
+            - containerPort: 8080
+              name: metrics
+            - containerPort: 8081
+              name: health
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi

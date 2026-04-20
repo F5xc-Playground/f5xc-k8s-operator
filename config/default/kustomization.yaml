@@ -1,0 +1,7 @@
+namespace: f5xc-system
+namePrefix: f5xc-
+
+resources:
+  - ../crd/bases
+  - ../rbac
+  - ../manager

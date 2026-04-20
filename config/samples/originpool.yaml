@@ -1,0 +1,10 @@
+apiVersion: xc.f5.com/v1alpha1
+kind: OriginPool
+metadata:
+  name: example-origin-pool
+spec:
+  originServers:
+    - publicIP:
+        ip: "203.0.113.10"
+  port: 443
+  loadBalancerAlgorithm: "ROUND_ROBIN"
