@@ -3,17 +3,13 @@ package xcclient
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
-// ServicePolicySpec is the resource-specific payload for an F5 XC service
-// policy. Rules holds the ordered list of policy rules as raw JSON so that
-// callers can supply arbitrary rule structures without losing fidelity.
-// Algo controls the match algorithm applied across the rule set.
+// ServicePolicySpec is the resource-specific payload for an F5 XC service policy.
 type ServicePolicySpec struct {
-	Rules []json.RawMessage `json:"rules,omitempty"`
 	Algo  string            `json:"algo,omitempty"`
+	Rules []json.RawMessage `json:"rules,omitempty"`
 }
 
 // ServicePolicyCreate is the request body for creating a new service policy.
@@ -22,16 +18,14 @@ type ServicePolicyCreate struct {
 	Spec     ServicePolicySpec `json:"spec"`
 }
 
-// ServicePolicyReplace is the request body for replacing an existing service
-// policy.
+// ServicePolicyReplace is the request body for replacing an existing service policy.
 type ServicePolicyReplace struct {
 	Metadata ObjectMeta        `json:"metadata"`
 	Spec     ServicePolicySpec `json:"spec"`
 }
 
 // ServicePolicy is the full service policy object returned by the F5 XC API.
-// RawSpec holds the unparsed "spec" JSON from the server response and is
-// excluded from marshalling (json:"-").
+// RawSpec holds the unparsed "spec" JSON from the server response.
 type ServicePolicy struct {
 	Metadata       ObjectMeta        `json:"metadata"`
 	SystemMetadata SystemMeta        `json:"system_metadata,omitempty"`
@@ -44,8 +38,6 @@ type ServicePolicy struct {
 // ---------------------------------------------------------------------------
 
 // CreateServicePolicy creates a new service policy in the given namespace.
-// Note: the F5 XC API uses the irregular plural "service_policys" as the
-// resource path (ResourceServicePolicy = "service_policys").
 func (c *Client) CreateServicePolicy(ctx context.Context, ns string, sp *ServicePolicyCreate) (*ServicePolicy, error) {
 	sp.Metadata.Namespace = ns
 	var result ServicePolicy
@@ -56,16 +48,14 @@ func (c *Client) CreateServicePolicy(ctx context.Context, ns string, sp *Service
 }
 
 // GetServicePolicy retrieves a service policy by name from the given namespace.
-// The returned ServicePolicy has RawSpec populated with the raw "spec" JSON.
 func (c *Client) GetServicePolicy(ctx context.Context, ns, name string) (*ServicePolicy, error) {
 	var raw json.RawMessage
 	if err := c.do(ctx, http.MethodGet, ResourceServicePolicy, ns, name, nil, &raw); err != nil {
 		return nil, err
 	}
-
 	var result ServicePolicy
 	if err := json.Unmarshal(raw, &result); err != nil {
-		return nil, fmt.Errorf("unmarshalling service policy: %w", err)
+		return nil, err
 	}
 	result.RawSpec = extractRawSpec(raw)
 	return &result, nil
