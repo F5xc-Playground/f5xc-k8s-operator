@@ -87,9 +87,9 @@ type OriginPoolReplace struct {
 // RawSpec holds the unparsed "spec" JSON from the server response and is
 // excluded from marshalling (json:"-").
 type OriginPool struct {
-	Metadata       ObjectMeta     `json:"metadata"`
-	SystemMetadata SystemMeta     `json:"system_metadata,omitempty"`
-	Spec           OriginPoolSpec `json:"spec"`
+	Metadata       ObjectMeta      `json:"metadata"`
+	SystemMetadata SystemMeta      `json:"system_metadata,omitempty"`
+	Spec           OriginPoolSpec  `json:"spec"`
 	RawSpec        json.RawMessage `json:"-"`
 }
 

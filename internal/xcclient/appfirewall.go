@@ -108,4 +108,3 @@ func (c *Client) ListAppFirewalls(ctx context.Context, ns string) ([]*AppFirewal
 	}
 	return unmarshalList[AppFirewall](raw)
 }
-

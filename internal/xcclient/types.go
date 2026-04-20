@@ -46,8 +46,8 @@ type ObjectRef struct {
 // ObjectEnvelope is the standard wrapper used when creating or retrieving a
 // single F5 XC object. Spec holds the resource-specific payload verbatim.
 type ObjectEnvelope struct {
-	Metadata       ObjectMeta  `json:"metadata"`
-	SystemMetadata SystemMeta  `json:"system_metadata,omitempty"`
+	Metadata       ObjectMeta      `json:"metadata"`
+	SystemMetadata SystemMeta      `json:"system_metadata,omitempty"`
 	Spec           json.RawMessage `json:"spec"`
 }
 

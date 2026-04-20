@@ -19,7 +19,7 @@ func sampleOriginPoolCreate(name string) *xcclient.OriginPoolCreate {
 			OriginServers: []xcclient.OriginServer{
 				{PublicIP: &xcclient.PublicIP{IP: "1.2.3.4"}},
 			},
-			Port: 443,
+			Port:                  443,
 			LoadBalancerAlgorithm: "LB_OVERRIDE_ALGO_ROUND_ROBIN",
 		},
 	}

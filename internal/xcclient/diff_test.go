@@ -12,11 +12,11 @@ import (
 // xcObject is a helper to build a realistic XC API JSON payload.
 // Fields left as nil are omitted.
 type xcObject struct {
-	Metadata        map[string]interface{} `json:"metadata,omitempty"`
-	SystemMetadata  map[string]interface{} `json:"system_metadata,omitempty"`
-	Spec            map[string]interface{} `json:"spec,omitempty"`
-	Status          map[string]interface{} `json:"status,omitempty"`
-	ReferringObjects []interface{}         `json:"referring_objects,omitempty"`
+	Metadata         map[string]interface{} `json:"metadata,omitempty"`
+	SystemMetadata   map[string]interface{} `json:"system_metadata,omitempty"`
+	Spec             map[string]interface{} `json:"spec,omitempty"`
+	Status           map[string]interface{} `json:"status,omitempty"`
+	ReferringObjects []interface{}          `json:"referring_objects,omitempty"`
 }
 
 func mustMarshal(t *testing.T, v interface{}) json.RawMessage {

@@ -47,9 +47,9 @@ type FakeXCServer struct {
 	Server *httptest.Server
 
 	mu       sync.Mutex
-	objects  map[string]StoredObject  // keyed by "resource/namespace/name"
+	objects  map[string]StoredObject // keyed by "resource/namespace/name"
 	requests []RecordedRequest
-	errors   map[string]*errorEntry   // keyed by "METHOD resource/namespace/name"
+	errors   map[string]*errorEntry // keyed by "METHOD resource/namespace/name"
 }
 
 // errorEntry wraps an ErrorSpec so the fake server can decrement the remaining
