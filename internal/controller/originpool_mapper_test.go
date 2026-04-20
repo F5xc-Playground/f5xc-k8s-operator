@@ -148,11 +148,16 @@ func TestBuildDesiredSpecJSON(t *testing.T) {
 	raw, err := buildDesiredSpecJSON(cr, "ns")
 	require.NoError(t, err)
 
-	var envelope map[string]json.RawMessage
-	require.NoError(t, json.Unmarshal(raw, &envelope))
-	_, hasMetadata := envelope["metadata"]
-	_, hasSpec := envelope["spec"]
-	assert.True(t, hasMetadata)
-	assert.True(t, hasSpec)
+	// buildDesiredSpecJSON returns the spec JSON only (same format as RawSpec
+	// from the server) so that it can be compared directly with current.RawSpec
+	// in ClientNeedsUpdate.
+	var spec map[string]json.RawMessage
+	require.NoError(t, json.Unmarshal(raw, &spec))
+	_, hasOriginServers := spec["origin_servers"]
+	_, hasPort := spec["port"]
+	assert.True(t, hasOriginServers)
+	assert.True(t, hasPort)
+	_, hasMetadata := spec["metadata"]
+	assert.False(t, hasMetadata, "spec JSON must not contain metadata")
 }
 
