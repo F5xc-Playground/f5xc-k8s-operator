@@ -26,6 +26,7 @@ type Client struct {
 	apiToken    string
 	maxRetries  int
 	baseDelay   time.Duration
+	jitterMax   time.Duration
 	rateLimiter *EndpointRateLimiter
 	metrics     *Metrics
 	log         logr.Logger
@@ -59,6 +60,7 @@ func NewClient(cfg Config, log logr.Logger, reg prometheus.Registerer) (*Client,
 		apiToken:    cfg.APIToken,
 		maxRetries:  cfg.MaxRetries,
 		baseDelay:   1 * time.Second,
+		jitterMax:   500 * time.Millisecond,
 		rateLimiter: NewEndpointRateLimiter(cfg.RateLimits),
 		metrics:     NewMetrics(reg),
 		log:         log,
@@ -71,6 +73,7 @@ func NewClient(cfg Config, log logr.Logger, reg prometheus.Registerer) (*Client,
 // for use in tests to keep retry loops fast.
 func (c *Client) SetBaseDelay(d time.Duration) {
 	c.baseDelay = d
+	c.jitterMax = d / 2
 }
 
 // ClientNeedsUpdate reports whether the current server-side object differs from
@@ -103,19 +106,16 @@ func (c *Client) do(ctx context.Context, method, resource, namespace, name strin
 		return fmt.Errorf("rate limiter wait: %w", err)
 	}
 
-	// Retry loop — only 429 responses are retried.
 	var lastErr error
 	for attempt := 0; attempt <= c.maxRetries; attempt++ {
 		if attempt > 0 {
-			// Exponential back-off with jitter.
 			delay := c.backoffDelay(attempt)
-			c.log.V(1).Info("retrying after 429", "attempt", attempt, "delay", delay, "url", url)
+			c.log.Info("rate limited by XC API, retrying", "attempt", attempt, "delay", delay, "endpoint", resource)
 			select {
 			case <-time.After(delay):
 			case <-ctx.Done():
 				return ctx.Err()
 			}
-			// Count the retry in metrics.
 			c.metrics.RetriesTotal.WithLabelValues(resource, "rate_limited").Inc()
 		}
 
@@ -124,15 +124,17 @@ func (c *Client) do(ctx context.Context, method, resource, namespace, name strin
 			return nil
 		}
 
-		// Only retry on 429 (ErrRateLimited).
 		if !errors.Is(lastErr, ErrRateLimited) {
+			if errors.Is(lastErr, ErrAuth) {
+				c.log.Error(lastErr, "authentication failure", "endpoint", resource, "method", method)
+			}
 			return lastErr
 		}
 
-		// Record the rate limit hit.
 		c.metrics.RateLimitHits.WithLabelValues(resource).Inc()
 	}
 
+	c.log.Error(lastErr, "retry exhaustion", "endpoint", resource, "method", method, "maxRetries", c.maxRetries)
 	return lastErr
 }
 
@@ -154,8 +156,9 @@ func (c *Client) doOnce(ctx context.Context, method, url, endpoint string, body,
 		return fmt.Errorf("building request: %w", err)
 	}
 
-	// Set auth and content-negotiation headers.
-	req.Header.Set("Authorization", "APIToken "+c.apiToken)
+	if c.apiToken != "" {
+		req.Header.Set("Authorization", "APIToken "+c.apiToken)
+	}
 	req.Header.Set("Accept", "application/json")
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -176,6 +179,7 @@ func (c *Client) doOnce(ctx context.Context, method, url, endpoint string, body,
 	}
 
 	statusStr := strconv.Itoa(resp.StatusCode)
+	c.log.V(1).Info("API round-trip", "method", method, "endpoint", endpoint, "status", resp.StatusCode, "duration", duration)
 	c.metrics.RequestsTotal.WithLabelValues(endpoint, method, statusStr).Inc()
 	c.metrics.RequestDuration.WithLabelValues(endpoint, method).Observe(duration.Seconds())
 
@@ -194,16 +198,12 @@ func (c *Client) doOnce(ctx context.Context, method, url, endpoint string, body,
 	return nil
 }
 
-// backoffDelay computes an exponential delay for the given retry attempt
-// (1-based). Jitter up to baseDelay is added to spread retries. Using
-// baseDelay as the jitter cap ensures the jitter scales down proportionally
-// when baseDelay is reduced for tests.
 func (c *Client) backoffDelay(attempt int) time.Duration {
 	exp := c.baseDelay
 	for i := 1; i < attempt; i++ {
 		exp *= 2
 	}
-	jitterCap := c.baseDelay
+	jitterCap := c.jitterMax
 	if jitterCap < 1 {
 		jitterCap = 1
 	}
