@@ -65,8 +65,10 @@ type AppFirewall struct {
 func (c *Client) CreateAppFirewall(ctx context.Context, ns string, fw *AppFirewallCreate) (*AppFirewall, error) {
 	fw.Metadata.Namespace = ns
 	var result AppFirewall
-	err := c.do(ctx, http.MethodPost, ResourceAppFirewall, ns, "", fw, &result)
-	return &result, err
+	if err := c.do(ctx, http.MethodPost, ResourceAppFirewall, ns, "", fw, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 // GetAppFirewall fetches the App Firewall with the given name from the given
@@ -90,8 +92,10 @@ func (c *Client) ReplaceAppFirewall(ctx context.Context, ns, name string, fw *Ap
 	fw.Metadata.Namespace = ns
 	fw.Metadata.Name = name
 	var result AppFirewall
-	err := c.do(ctx, http.MethodPut, ResourceAppFirewall, ns, name, fw, &result)
-	return &result, err
+	if err := c.do(ctx, http.MethodPut, ResourceAppFirewall, ns, name, fw, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 // DeleteAppFirewall deletes the App Firewall with the given name.

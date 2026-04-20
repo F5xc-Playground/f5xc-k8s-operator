@@ -1,10 +1,8 @@
 package xcclient
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 )
 
 // extractRawSpec pulls the "spec" field out of the raw JSON envelope returned
@@ -38,13 +36,4 @@ func unmarshalList[T any](data []byte) ([]*T, error) {
 		out = append(out, &item)
 	}
 	return out, nil
-}
-
-// crudList issues a GET to the list endpoint and decodes the items into []*T.
-func crudList[T any](ctx context.Context, c *Client, resource, namespace string) ([]*T, error) {
-	var raw json.RawMessage
-	if err := c.do(ctx, http.MethodGet, resource, namespace, "", nil, &raw); err != nil {
-		return nil, err
-	}
-	return unmarshalList[T](raw)
 }

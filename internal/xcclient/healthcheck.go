@@ -70,6 +70,7 @@ func (h *HealthCheck) ParseSpec() (*HealthCheckSpec, error) {
 
 // CreateHealthCheck creates a new health check in the given namespace.
 func (c *Client) CreateHealthCheck(ctx context.Context, ns string, hc CreateHealthCheck) (*HealthCheck, error) {
+	hc.Metadata.Namespace = ns
 	var result HealthCheck
 	if err := c.do(ctx, http.MethodPost, ResourceHealthCheck, ns, "", hc, &result); err != nil {
 		return nil, err
@@ -88,6 +89,8 @@ func (c *Client) GetHealthCheck(ctx context.Context, ns, name string) (*HealthCh
 
 // ReplaceHealthCheck replaces an existing health check identified by name.
 func (c *Client) ReplaceHealthCheck(ctx context.Context, ns, name string, hc ReplaceHealthCheck) (*HealthCheck, error) {
+	hc.Metadata.Namespace = ns
+	hc.Metadata.Name = name
 	var result HealthCheck
 	if err := c.do(ctx, http.MethodPut, ResourceHealthCheck, ns, name, hc, &result); err != nil {
 		return nil, err

@@ -99,6 +99,7 @@ type OriginPool struct {
 
 // CreateOriginPool creates a new origin pool in the given namespace.
 func (c *Client) CreateOriginPool(ctx context.Context, ns string, pool *OriginPoolCreate) (*OriginPool, error) {
+	pool.Metadata.Namespace = ns
 	var result OriginPool
 	if err := c.do(ctx, http.MethodPost, ResourceOriginPool, ns, "", pool, &result); err != nil {
 		return nil, err
@@ -124,6 +125,8 @@ func (c *Client) GetOriginPool(ctx context.Context, ns, name string) (*OriginPoo
 
 // ReplaceOriginPool replaces an existing origin pool identified by name.
 func (c *Client) ReplaceOriginPool(ctx context.Context, ns, name string, pool *OriginPoolReplace) (*OriginPool, error) {
+	pool.Metadata.Namespace = ns
+	pool.Metadata.Name = name
 	var result OriginPool
 	if err := c.do(ctx, http.MethodPut, ResourceOriginPool, ns, name, pool, &result); err != nil {
 		return nil, err

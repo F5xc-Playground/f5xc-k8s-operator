@@ -43,6 +43,7 @@ type XCRateLimiter struct {
 
 // CreateRateLimiter creates a new XC rate limiter in the given namespace.
 func (c *Client) CreateRateLimiter(ctx context.Context, ns string, rl XCRateLimiterCreate) (*XCRateLimiter, error) {
+	rl.Metadata.Namespace = ns
 	var result XCRateLimiter
 	if err := c.do(ctx, http.MethodPost, ResourceRateLimiter, ns, "", rl, &result); err != nil {
 		return nil, err
@@ -68,6 +69,8 @@ func (c *Client) GetRateLimiter(ctx context.Context, ns, name string) (*XCRateLi
 
 // ReplaceRateLimiter replaces an existing XC rate limiter identified by name.
 func (c *Client) ReplaceRateLimiter(ctx context.Context, ns, name string, rl XCRateLimiterReplace) (*XCRateLimiter, error) {
+	rl.Metadata.Namespace = ns
+	rl.Metadata.Name = name
 	var result XCRateLimiter
 	if err := c.do(ctx, http.MethodPut, ResourceRateLimiter, ns, name, rl, &result); err != nil {
 		return nil, err
