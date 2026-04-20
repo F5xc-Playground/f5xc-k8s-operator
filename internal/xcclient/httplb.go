@@ -7,29 +7,68 @@ import (
 )
 
 // HTTPLoadBalancerSpec is the resource-specific payload for an F5 XC HTTP
-// load balancer.
+// load balancer. Each group of fields represents a OneOf in the F5 XC API:
+// exactly one field in each group should be set per object.
 type HTTPLoadBalancerSpec struct {
-	Domains           []string    `json:"domains,omitempty"`
-	DefaultRoutePools []RoutePool `json:"default_route_pools,omitempty"`
-	AppFirewall       *ObjectRef  `json:"app_firewall,omitempty"`
-	RateLimiter       *ObjectRef  `json:"rate_limiter,omitempty"`
+	Domains           []string        `json:"domains,omitempty"`
+	DefaultRoutePools []RoutePool     `json:"default_route_pools,omitempty"`
+	Routes            json.RawMessage `json:"routes,omitempty"`
 
-	// Protocol — OneOf: http, https, https_auto_cert
+	// TLS — OneOf: http, https, https_auto_cert
 	HTTP          json.RawMessage `json:"http,omitempty"`
 	HTTPS         json.RawMessage `json:"https,omitempty"`
 	HTTPSAutoCert json.RawMessage `json:"https_auto_cert,omitempty"`
 
-	// Load balancing algorithm — OneOf: round_robin, least_active, random, ring_hash, etc.
-	RoundRobin  json.RawMessage `json:"round_robin,omitempty"`
-	LeastActive json.RawMessage `json:"least_active,omitempty"`
-	Random      json.RawMessage `json:"random,omitempty"`
-	RingHash    json.RawMessage `json:"ring_hash,omitempty"`
+	// WAF — OneOf: disable_waf (empty-object sentinel) or app_firewall (ObjectRef)
+	DisableWAF  json.RawMessage `json:"disable_waf,omitempty"`
+	AppFirewall *ObjectRef      `json:"app_firewall,omitempty"`
 
-	// Advertise — OneOf
+	// Bot defense — OneOf: disable_bot_defense, bot_defense
+	DisableBotDefense json.RawMessage `json:"disable_bot_defense,omitempty"`
+	BotDefense        json.RawMessage `json:"bot_defense,omitempty"`
+
+	// API discovery — OneOf: disable_api_discovery, enable_api_discovery
+	DisableAPIDiscovery json.RawMessage `json:"disable_api_discovery,omitempty"`
+	EnableAPIDiscovery  json.RawMessage `json:"enable_api_discovery,omitempty"`
+
+	// IP reputation — OneOf: disable_ip_reputation, enable_ip_reputation
+	DisableIPReputation json.RawMessage `json:"disable_ip_reputation,omitempty"`
+	EnableIPReputation  json.RawMessage `json:"enable_ip_reputation,omitempty"`
+
+	// Rate limit — OneOf: disable_rate_limit, rate_limit
+	DisableRateLimit json.RawMessage `json:"disable_rate_limit,omitempty"`
+	RateLimit        json.RawMessage `json:"rate_limit,omitempty"`
+
+	// Challenge — OneOf: no_challenge, js_challenge, captcha_challenge, policy_based_challenge
+	NoChallenge          json.RawMessage `json:"no_challenge,omitempty"`
+	JSChallenge          json.RawMessage `json:"js_challenge,omitempty"`
+	CaptchaChallenge     json.RawMessage `json:"captcha_challenge,omitempty"`
+	PolicyBasedChallenge json.RawMessage `json:"policy_based_challenge,omitempty"`
+
+	// LB algorithm — OneOf: round_robin, least_active, random, source_ip_stickiness,
+	// cookie_stickiness, ring_hash
+	RoundRobin         json.RawMessage `json:"round_robin,omitempty"`
+	LeastActive        json.RawMessage `json:"least_active,omitempty"`
+	Random             json.RawMessage `json:"random,omitempty"`
+	SourceIPStickiness json.RawMessage `json:"source_ip_stickiness,omitempty"`
+	CookieStickiness   json.RawMessage `json:"cookie_stickiness,omitempty"`
+	RingHash           json.RawMessage `json:"ring_hash,omitempty"`
+
+	// Advertise — OneOf: advertise_on_public_default_vip, advertise_on_public,
+	// advertise_custom, do_not_advertise
 	AdvertiseOnPublicDefaultVIP json.RawMessage `json:"advertise_on_public_default_vip,omitempty"`
 	AdvertiseOnPublic           json.RawMessage `json:"advertise_on_public,omitempty"`
 	AdvertiseCustom             json.RawMessage `json:"advertise_custom,omitempty"`
 	DoNotAdvertise              json.RawMessage `json:"do_not_advertise,omitempty"`
+
+	// Service policies — OneOf: service_policies_from_namespace, active_service_policies,
+	// no_service_policies
+	ServicePoliciesFromNamespace json.RawMessage `json:"service_policies_from_namespace,omitempty"`
+	ActiveServicePolicies        json.RawMessage `json:"active_service_policies,omitempty"`
+	NoServicePolicies            json.RawMessage `json:"no_service_policies,omitempty"`
+
+	// User ID — OneOf: user_id_client_ip
+	UserIDClientIP json.RawMessage `json:"user_id_client_ip,omitempty"`
 }
 
 // HTTPLoadBalancerCreate is the request body for creating a new HTTP load
