@@ -1,3 +1,5 @@
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+
 package main
 
 import (
@@ -73,7 +75,18 @@ func main() {
 		DefaultBurst: rateLimitBurst,
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	restCfg := ctrl.GetConfigOrDie()
+
+	// Build a direct (non-cached) client for the initial Secret read, which
+	// must happen before mgr.Start() — the manager's cache-backed client is
+	// not usable until the cache has synced.
+	directClient, err := client.New(restCfg, client.Options{Scheme: scheme})
+	if err != nil {
+		log.Error(err, "unable to create direct Kubernetes client")
+		os.Exit(1)
+	}
+
+	mgr, err := ctrl.NewManager(restCfg, ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress: metricsBindAddress,
@@ -87,9 +100,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	cs, err := buildClientSet(
+	cs, initialCfg, err := buildClientSet(
 		context.Background(),
-		mgr.GetClient(),
+		directClient,
 		log,
 		credentialsSecretNS,
 		credentialsSecret,
@@ -122,6 +135,7 @@ func main() {
 	if err := setupSecretWatch(
 		mgr,
 		cs,
+		initialCfg,
 		log,
 		credentialsSecretNS,
 		credentialsSecret,
@@ -140,43 +154,46 @@ func main() {
 }
 
 // buildClientSet reads the credential Secret and constructs a ready-to-use ClientSet.
+// It returns both the ClientSet and the xcclient.Config so the caller can seed
+// the credential watcher's currentCfg for P12 temp-file cleanup.
 func buildClientSet(
 	ctx context.Context,
 	k8sClient client.Client,
 	log logr.Logger,
 	secretNS, secretName, tenantURL string,
 	rateLimits xcclient.RateLimitConfig,
-) (*xcclientset.ClientSet, error) {
+) (*xcclientset.ClientSet, xcclient.Config, error) {
 	var secret corev1.Secret
 	if err := k8sClient.Get(ctx, types.NamespacedName{
 		Namespace: secretNS,
 		Name:      secretName,
 	}, &secret); err != nil {
-		return nil, fmt.Errorf("reading credential Secret %s/%s: %w", secretNS, secretName, err)
+		return nil, xcclient.Config{}, fmt.Errorf("reading credential Secret %s/%s: %w", secretNS, secretName, err)
 	}
 
 	cfg, err := credentials.ConfigFromSecret(&secret, tenantURL, rateLimits)
 	if err != nil {
-		return nil, fmt.Errorf("building XC config from Secret: %w", err)
+		return nil, xcclient.Config{}, fmt.Errorf("building XC config from Secret: %w", err)
 	}
 
 	xcClient, err := xcclient.NewClient(cfg, log.WithName("xcclient"), prometheus.DefaultRegisterer)
 	if err != nil {
-		return nil, fmt.Errorf("creating XC client: %w", err)
+		return nil, xcclient.Config{}, fmt.Errorf("creating XC client: %w", err)
 	}
 
-	return xcclientset.New(xcClient), nil
+	return xcclientset.New(xcClient), cfg, nil
 }
 
 // credentialWatcher reconciles credential Secret changes by rebuilding the XC client.
 type credentialWatcher struct {
-	k8sClient  client.Client
-	cs         *xcclientset.ClientSet
-	log        logr.Logger
-	secretNS   string
-	secretName string
-	tenantURL  string
-	rateLimits xcclient.RateLimitConfig
+	k8sClient   client.Client
+	cs          *xcclientset.ClientSet
+	log         logr.Logger
+	secretNS    string
+	secretName  string
+	tenantURL   string
+	rateLimits  xcclient.RateLimitConfig
+	currentCfg  xcclient.Config // tracks the active config for P12 temp-file cleanup
 }
 
 func (w *credentialWatcher) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
@@ -195,14 +212,31 @@ func (w *credentialWatcher) Reconcile(ctx context.Context, _ reconcile.Request) 
 		return reconcile.Result{}, nil
 	}
 
-	newClient, err := xcclient.NewClient(cfg, w.log.WithName("xcclient"), prometheus.DefaultRegisterer)
+	// Use a fresh isolated registry for rotated clients so that registering
+	// the same metric names a second time does not panic.
+	newClient, err := xcclient.NewClient(cfg, w.log.WithName("xcclient"), prometheus.NewRegistry())
 	if err != nil {
 		w.log.Error(err, "failed to create new XC client from updated Secret; keeping existing client")
+		if cfg.CertP12Path != "" {
+			os.Remove(cfg.CertP12Path)
+		}
 		return reconcile.Result{}, nil
 	}
 
+	// Remember the previous config so we can clean up its P12 temp file after
+	// the swap succeeds.
+	prevCfg := w.currentCfg
 	w.cs.Swap(newClient)
+	w.currentCfg = cfg
 	w.log.Info("XC client rotated successfully")
+
+	// Remove the old P12 temp file now that the new client is live.
+	if prevCfg.CertP12Path != "" {
+		if err := os.Remove(prevCfg.CertP12Path); err != nil && !os.IsNotExist(err) {
+			w.log.Error(err, "failed to remove old P12 temp file", "path", prevCfg.CertP12Path)
+		}
+	}
+
 	return reconcile.Result{}, nil
 }
 
@@ -211,6 +245,7 @@ func (w *credentialWatcher) Reconcile(ctx context.Context, _ reconcile.Request) 
 func setupSecretWatch(
 	mgr ctrl.Manager,
 	cs *xcclientset.ClientSet,
+	initialCfg xcclient.Config,
 	log logr.Logger,
 	secretNS, secretName, tenantURL string,
 	rateLimits xcclient.RateLimitConfig,
@@ -223,6 +258,7 @@ func setupSecretWatch(
 		secretName: secretName,
 		tenantURL:  tenantURL,
 		rateLimits: rateLimits,
+		currentCfg: initialCfg,
 	}
 
 	// Use a fixed reconcile.Request key so all Secret events funnel to a
