@@ -16,6 +16,7 @@ rules:
   - xc.f5.com
   resources:
   - originpools
+  - ratelimiters
   verbs:
   - create
   - delete
@@ -28,12 +29,14 @@ rules:
   - xc.f5.com
   resources:
   - originpools/finalizers
+  - ratelimiters/finalizers
   verbs:
   - update
 - apiGroups:
   - xc.f5.com
   resources:
   - originpools/status
+  - ratelimiters/status
   verbs:
   - get
   - patch
