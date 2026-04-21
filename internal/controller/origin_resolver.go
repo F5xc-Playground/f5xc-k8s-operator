@@ -179,7 +179,14 @@ func ResolveGateway(gw *gatewayv1.Gateway) ResolvedOrigin {
 	}
 
 	addr := gw.Status.Addresses[0]
-	addrType := v1alpha1.AddressTypeIP
+	if addr.Value == "" {
+		return ResolvedOrigin{
+			Pending: true,
+			Message: "Gateway address has empty value",
+		}
+	}
+
+	var addrType string
 	if addr.Type != nil && *addr.Type == gatewayv1.HostnameAddressType {
 		addrType = v1alpha1.AddressTypeFQDN
 	} else {
@@ -209,6 +216,12 @@ func ResolveRoute(route *routev1.Route) ResolvedOrigin {
 	for _, ri := range route.Status.Ingress {
 		for _, cond := range ri.Conditions {
 			if cond.Type == routev1.RouteAdmitted && cond.Status == corev1.ConditionTrue {
+				if ri.Host == "" {
+					return ResolvedOrigin{
+						Pending: true,
+						Message: "Route admitted but has empty host",
+					}
+				}
 				port := uint32(80)
 				if route.Spec.TLS != nil {
 					port = 443

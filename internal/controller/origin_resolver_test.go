@@ -392,6 +392,20 @@ func TestResolveGateway_NilAddressType(t *testing.T) {
 	assert.Equal(t, v1alpha1.AddressTypeIP, result.AddressType)
 }
 
+func TestResolveGateway_EmptyAddressValue(t *testing.T) {
+	gw := &gatewayv1.Gateway{
+		Status: gatewayv1.GatewayStatus{
+			Addresses: []gatewayv1.GatewayStatusAddress{
+				{Value: ""},
+			},
+		},
+	}
+
+	result := ResolveGateway(gw)
+	assert.True(t, result.Pending)
+	assert.Contains(t, result.Message, "empty value")
+}
+
 func TestResolveRoute_AdmittedWithTLS(t *testing.T) {
 	route := &routev1.Route{
 		Spec: routev1.RouteSpec{
@@ -460,6 +474,25 @@ func TestResolveRoute_NoIngress(t *testing.T) {
 	result := ResolveRoute(route)
 	assert.True(t, result.Pending)
 	assert.Contains(t, result.Message, "no ingress status")
+}
+
+func TestResolveRoute_AdmittedEmptyHost(t *testing.T) {
+	route := &routev1.Route{
+		Status: routev1.RouteStatus{
+			Ingress: []routev1.RouteIngress{
+				{
+					Host: "",
+					Conditions: []routev1.RouteIngressCondition{
+						{Type: routev1.RouteAdmitted, Status: corev1.ConditionTrue},
+					},
+				},
+			},
+		},
+	}
+
+	result := ResolveRoute(route)
+	assert.True(t, result.Pending)
+	assert.Contains(t, result.Message, "empty host")
 }
 
 func TestResolveRoute_MultiIngressSecondAdmitted(t *testing.T) {
