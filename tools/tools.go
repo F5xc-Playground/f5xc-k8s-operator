@@ -5,7 +5,9 @@
 package tools
 
 import (
+	_ "github.com/openshift/api/route/v1"
 	_ "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	_ "sigs.k8s.io/controller-runtime"
 	_ "sigs.k8s.io/controller-runtime/tools/setup-envtest"
+	_ "sigs.k8s.io/gateway-api/apis/v1"
 )
