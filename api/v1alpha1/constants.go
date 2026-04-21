@@ -22,4 +22,13 @@ const (
 	ReasonRateLimited     = "RateLimited"
 	ReasonServerError     = "ServerError"
 	ReasonConflict        = "Conflict"
+
+	ReasonDiscoveryPending = "DiscoveryPending"
+	ReasonDiscoveryFailed  = "DiscoveryFailed"
+
+	AddressTypeIP   = "IP"
+	AddressTypeFQDN = "FQDN"
+
+	DiscoveryStatusResolved = "Resolved"
+	DiscoveryStatusPending  = "Pending"
 )

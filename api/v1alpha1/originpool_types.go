@@ -45,15 +45,26 @@ type OriginPoolStatus struct {
 	XCResourceVersion  string             `json:"xcResourceVersion,omitempty"`
 	XCUID              string             `json:"xcUID,omitempty"`
 	XCNamespace        string             `json:"xcNamespace,omitempty"`
+	DiscoveredOrigins  []DiscoveredOrigin `json:"discoveredOrigins,omitempty"`
+}
+
+type DiscoveredOrigin struct {
+	Resource    ResourceRef `json:"resource"`
+	Address     string      `json:"address,omitempty"`
+	Port        uint32      `json:"port,omitempty"`
+	AddressType string      `json:"addressType,omitempty"`
+	Status      string      `json:"status"`
+	Message     string      `json:"message,omitempty"`
 }
 
 type OriginServer struct {
-	PublicIP      *PublicIP      `json:"publicIP,omitempty"`
-	PublicName    *PublicName    `json:"publicName,omitempty"`
-	PrivateIP     *PrivateIP     `json:"privateIP,omitempty"`
-	PrivateName   *PrivateName   `json:"privateName,omitempty"`
-	K8SService    *K8SService    `json:"k8sService,omitempty"`
-	ConsulService *ConsulService `json:"consulService,omitempty"`
+	PublicIP      *PublicIP             `json:"publicIP,omitempty"`
+	PublicName    *PublicName           `json:"publicName,omitempty"`
+	PrivateIP     *PrivateIP            `json:"privateIP,omitempty"`
+	PrivateName   *PrivateName          `json:"privateName,omitempty"`
+	K8SService    *K8SService           `json:"k8sService,omitempty"`
+	ConsulService *ConsulService        `json:"consulService,omitempty"`
+	Discover      *OriginServerDiscover `json:"discover,omitempty"`
 }
 
 type PublicIP struct {
@@ -83,6 +94,12 @@ type K8SService struct {
 type ConsulService struct {
 	ServiceName string     `json:"serviceName"`
 	Site        *ObjectRef `json:"site,omitempty"`
+}
+
+type OriginServerDiscover struct {
+	Resource        ResourceRef `json:"resource"`
+	AddressOverride string      `json:"addressOverride,omitempty"`
+	PortOverride    *uint32     `json:"portOverride,omitempty"`
 }
 
 func init() {

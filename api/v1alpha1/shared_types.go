@@ -11,3 +11,9 @@ type RoutePool struct {
 	Weight   *uint32   `json:"weight,omitempty"`
 	Priority *uint32   `json:"priority,omitempty"`
 }
+
+type ResourceRef struct {
+	Kind      string `json:"kind"`
+	Name      string `json:"name"`
+	Namespace string `json:"namespace,omitempty"`
+}
