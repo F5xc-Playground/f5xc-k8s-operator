@@ -5,30 +5,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	FinalizerXCCleanup = "xc.f5.com/cleanup"
-
-	AnnotationXCNamespace    = "f5xc.io/namespace"
-	AnnotationDeletionPolicy = "f5xc.io/deletion-policy"
-
-	DeletionPolicyOrphan = "orphan"
-
-	ConditionReady  = "Ready"
-	ConditionSynced = "Synced"
-
-	ReasonCreateSucceeded = "CreateSucceeded"
-	ReasonUpdateSucceeded = "UpdateSucceeded"
-	ReasonUpToDate        = "UpToDate"
-	ReasonDeleteSucceeded = "DeleteSucceeded"
-	ReasonCreateFailed    = "CreateFailed"
-	ReasonUpdateFailed    = "UpdateFailed"
-	ReasonDeleteFailed    = "DeleteFailed"
-	ReasonAuthFailure     = "AuthFailure"
-	ReasonRateLimited     = "RateLimited"
-	ReasonServerError     = "ServerError"
-	ReasonConflict        = "Conflict"
-)
-
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName=op
@@ -107,12 +83,6 @@ type K8SService struct {
 type ConsulService struct {
 	ServiceName string     `json:"serviceName"`
 	Site        *ObjectRef `json:"site,omitempty"`
-}
-
-type ObjectRef struct {
-	Name      string `json:"name"`
-	Namespace string `json:"namespace,omitempty"`
-	Tenant    string `json:"tenant,omitempty"`
 }
 
 func init() {

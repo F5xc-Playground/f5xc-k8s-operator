@@ -83,7 +83,7 @@ func (r *OriginPoolReconciler) handleCreate(ctx context.Context, log logr.Logger
 }
 
 func (r *OriginPoolReconciler) handleUpdate(ctx context.Context, log logr.Logger, cr *v1alpha1.OriginPool, xc xcclient.XCClient, xcNS string, current *xcclient.OriginPool) (ctrl.Result, error) {
-	desiredJSON, err := buildDesiredSpecJSON(cr, xcNS)
+	desiredJSON, err := buildOriginPoolDesiredSpecJSON(cr, xcNS)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("building desired spec JSON: %w", err)
 	}

@@ -145,7 +145,7 @@ func TestBuildDesiredSpecJSON(t *testing.T) {
 		},
 	}
 
-	raw, err := buildDesiredSpecJSON(cr, "ns")
+	raw, err := buildOriginPoolDesiredSpecJSON(cr, "ns")
 	require.NoError(t, err)
 
 	// buildDesiredSpecJSON returns the spec JSON only (same format as RawSpec

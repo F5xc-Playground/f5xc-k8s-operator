@@ -28,7 +28,7 @@ func buildOriginPoolReplace(cr *v1alpha1.OriginPool, xcNamespace, resourceVersio
 	}
 }
 
-func buildDesiredSpecJSON(cr *v1alpha1.OriginPool, xcNamespace string) (json.RawMessage, error) {
+func buildOriginPoolDesiredSpecJSON(cr *v1alpha1.OriginPool, xcNamespace string) (json.RawMessage, error) {
 	create := buildOriginPoolCreate(cr, xcNamespace)
 	return json.Marshal(create.Spec)
 }

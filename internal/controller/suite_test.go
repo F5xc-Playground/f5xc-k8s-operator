@@ -55,6 +55,27 @@ func setupSuite(t *testing.T) {
 	})
 }
 
+func startManagerFor(t *testing.T, setup func(mgr ctrl.Manager) error) {
+	t.Helper()
+	mgr, err := ctrl.NewManager(testCfg, ctrl.Options{
+		Scheme: scheme.Scheme,
+		Controller: config.Controller{
+			SkipNameValidation: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("creating manager: %v", err)
+	}
+	if err := setup(mgr); err != nil {
+		t.Fatalf("setting up controller: %v", err)
+	}
+	go func() {
+		if err := mgr.Start(testCtx); err != nil {
+			t.Errorf("manager exited with error: %v", err)
+		}
+	}()
+}
+
 func startManager(t *testing.T, reconciler *OriginPoolReconciler) {
 	t.Helper()
 	mgr, err := ctrl.NewManager(testCfg, ctrl.Options{
