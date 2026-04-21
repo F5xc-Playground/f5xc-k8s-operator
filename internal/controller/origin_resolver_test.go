@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
+	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	routev1 "github.com/openshift/api/route/v1"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 

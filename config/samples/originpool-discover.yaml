@@ -1,0 +1,12 @@
+apiVersion: xc.f5.com/v1alpha1
+kind: OriginPool
+metadata:
+  name: example-discover-pool
+spec:
+  port: 443
+  originServers:
+    - discover:
+        resource:
+          kind: Service
+          name: my-nginx
+          namespace: default
