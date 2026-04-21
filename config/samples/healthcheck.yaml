@@ -1,0 +1,7 @@
+apiVersion: xc.f5.com/v1alpha1
+kind: HealthCheck
+metadata:
+  name: example-healthcheck
+spec:
+  httpHealthCheck:
+    path: "/healthz"

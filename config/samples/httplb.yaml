@@ -1,0 +1,12 @@
+apiVersion: xc.f5.com/v1alpha1
+kind: HTTPLoadBalancer
+metadata:
+  name: example-httplb
+spec:
+  domains:
+    - "app.example.com"
+  defaultRoutePools:
+    - pool:
+        name: example-pool
+      weight: 1
+  advertiseOnPublicDefaultVIP: {}

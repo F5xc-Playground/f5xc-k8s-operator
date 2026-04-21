@@ -1,0 +1,7 @@
+apiVersion: xc.f5.com/v1alpha1
+kind: RateLimiter
+metadata:
+  name: example-ratelimiter
+spec:
+  threshold: 100
+  unit: "MINUTE"

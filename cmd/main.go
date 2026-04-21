@@ -240,14 +240,14 @@ func buildClientSet(
 
 // credentialWatcher reconciles credential Secret changes by rebuilding the XC client.
 type credentialWatcher struct {
-	k8sClient   client.Client
-	cs          *xcclientset.ClientSet
-	log         logr.Logger
-	secretNS    string
-	secretName  string
-	tenantURL   string
-	rateLimits  xcclient.RateLimitConfig
-	currentCfg  xcclient.Config // tracks the active config for P12 temp-file cleanup
+	k8sClient  client.Client
+	cs         *xcclientset.ClientSet
+	log        logr.Logger
+	secretNS   string
+	secretName string
+	tenantURL  string
+	rateLimits xcclient.RateLimitConfig
+	currentCfg xcclient.Config // tracks the active config for P12 temp-file cleanup
 }
 
 func (w *credentialWatcher) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {

@@ -1,0 +1,12 @@
+apiVersion: xc.f5.com/v1alpha1
+kind: TCPLoadBalancer
+metadata:
+  name: example-tcplb
+spec:
+  domains:
+    - "tcp.example.com"
+  listenPort: 443
+  originPools:
+    - pool:
+        name: example-pool
+      weight: 1

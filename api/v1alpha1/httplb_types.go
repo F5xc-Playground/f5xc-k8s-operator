@@ -32,8 +32,8 @@ type HTTPLoadBalancerList struct {
 
 // HTTPLoadBalancerSpec defines the desired state of an HTTPLoadBalancer.
 type HTTPLoadBalancerSpec struct {
-	Domains           []string              `json:"domains"`
-	DefaultRoutePools []RoutePool           `json:"defaultRoutePools"`
+	Domains           []string               `json:"domains"`
+	DefaultRoutePools []RoutePool            `json:"defaultRoutePools"`
 	Routes            []apiextensionsv1.JSON `json:"routes,omitempty"`
 
 	// TLS OneOf: http, https, httpsAutoCert

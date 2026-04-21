@@ -35,10 +35,10 @@ func TestBuildAppFirewallCreate_MultipleOneOfGroups(t *testing.T) {
 	cr := &v1alpha1.AppFirewall{
 		ObjectMeta: metav1.ObjectMeta{Name: "afw-multi", Namespace: "ns"},
 		Spec: v1alpha1.AppFirewallSpec{
-			Blocking:             &apiextensionsv1.JSON{Raw: []byte(`{"mode":"blocking"}`)},
+			Blocking:               &apiextensionsv1.JSON{Raw: []byte(`{"mode":"blocking"}`)},
 			UseDefaultBlockingPage: &apiextensionsv1.JSON{Raw: []byte(`{}`)},
-			DefaultBotSetting:    &apiextensionsv1.JSON{Raw: []byte(`{}`)},
-			DefaultAnonymization: &apiextensionsv1.JSON{Raw: []byte(`{}`)},
+			DefaultBotSetting:      &apiextensionsv1.JSON{Raw: []byte(`{}`)},
+			DefaultAnonymization:   &apiextensionsv1.JSON{Raw: []byte(`{}`)},
 		},
 	}
 

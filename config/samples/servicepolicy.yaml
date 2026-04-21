@@ -1,0 +1,6 @@
+apiVersion: xc.f5.com/v1alpha1
+kind: ServicePolicy
+metadata:
+  name: example-servicepolicy
+spec:
+  algo: "FIRST_MATCH"
