@@ -78,24 +78,8 @@ func startManagerFor(t *testing.T, setup func(mgr ctrl.Manager) error) {
 
 func startManager(t *testing.T, reconciler *OriginPoolReconciler) {
 	t.Helper()
-	mgr, err := ctrl.NewManager(testCfg, ctrl.Options{
-		Scheme: scheme.Scheme,
-		Controller: config.Controller{
-			SkipNameValidation: boolPtr(true),
-		},
+	startManagerFor(t, func(mgr ctrl.Manager) error {
+		reconciler.Client = mgr.GetClient()
+		return reconciler.SetupWithManager(mgr)
 	})
-	if err != nil {
-		t.Fatalf("creating manager: %v", err)
-	}
-
-	reconciler.Client = mgr.GetClient()
-	if err := reconciler.SetupWithManager(mgr); err != nil {
-		t.Fatalf("setting up controller: %v", err)
-	}
-
-	go func() {
-		if err := mgr.Start(testCtx); err != nil {
-			t.Errorf("manager exited with error: %v", err)
-		}
-	}()
 }

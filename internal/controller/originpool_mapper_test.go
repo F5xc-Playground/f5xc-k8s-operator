@@ -148,9 +148,9 @@ func TestBuildDesiredSpecJSON(t *testing.T) {
 	raw, err := buildOriginPoolDesiredSpecJSON(cr, "ns")
 	require.NoError(t, err)
 
-	// buildDesiredSpecJSON returns the spec JSON only (same format as RawSpec
-	// from the server) so that it can be compared directly with current.RawSpec
-	// in ClientNeedsUpdate.
+	// buildOriginPoolDesiredSpecJSON returns the spec JSON only (same format as
+	// RawSpec from the server) so that it can be compared directly with
+	// current.RawSpec in ClientNeedsUpdate.
 	var spec map[string]json.RawMessage
 	require.NoError(t, json.Unmarshal(raw, &spec))
 	_, hasOriginServers := spec["origin_servers"]
