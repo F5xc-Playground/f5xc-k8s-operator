@@ -31,6 +31,9 @@ type AppFirewallList struct {
 }
 
 type AppFirewallSpec struct {
+	// +kubebuilder:validation:Required
+	XCNamespace string `json:"xcNamespace"`
+
 	// Detection — OneOf: DefaultDetectionSettings | DetectionSettings
 	DefaultDetectionSettings *apiextensionsv1.JSON `json:"defaultDetectionSettings,omitempty"`
 	DetectionSettings        *apiextensionsv1.JSON `json:"detectionSettings,omitempty"`

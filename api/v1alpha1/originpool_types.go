@@ -31,6 +31,8 @@ type OriginPoolList struct {
 }
 
 type OriginPoolSpec struct {
+	// +kubebuilder:validation:Required
+	XCNamespace           string                `json:"xcNamespace"`
 	OriginServers         []OriginServer        `json:"originServers"`
 	Port                  int                   `json:"port"`
 	LoadBalancerAlgorithm string                `json:"loadBalancerAlgorithm,omitempty"`

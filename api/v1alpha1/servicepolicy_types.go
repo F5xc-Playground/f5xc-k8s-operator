@@ -31,7 +31,9 @@ type ServicePolicyList struct {
 }
 
 type ServicePolicySpec struct {
-	Algo  string                 `json:"algo,omitempty"`
+	// +kubebuilder:validation:Required
+	XCNamespace string                 `json:"xcNamespace"`
+	Algo        string                 `json:"algo,omitempty"`
 	Rules []apiextensionsv1.JSON `json:"rules,omitempty"`
 }
 

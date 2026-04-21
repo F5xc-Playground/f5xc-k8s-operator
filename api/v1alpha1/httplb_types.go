@@ -32,6 +32,8 @@ type HTTPLoadBalancerList struct {
 
 // HTTPLoadBalancerSpec defines the desired state of an HTTPLoadBalancer.
 type HTTPLoadBalancerSpec struct {
+	// +kubebuilder:validation:Required
+	XCNamespace       string                 `json:"xcNamespace"`
 	Domains           []string               `json:"domains"`
 	DefaultRoutePools []RoutePool            `json:"defaultRoutePools"`
 	Routes            []apiextensionsv1.JSON `json:"routes,omitempty"`

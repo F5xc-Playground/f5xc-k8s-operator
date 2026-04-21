@@ -30,6 +30,8 @@ type RateLimiterList struct {
 }
 
 type RateLimiterSpec struct {
+	// +kubebuilder:validation:Required
+	XCNamespace     string  `json:"xcNamespace"`
 	Threshold       uint32  `json:"threshold"`
 	Unit            string  `json:"unit"`
 	BurstMultiplier *uint32 `json:"burstMultiplier,omitempty"`

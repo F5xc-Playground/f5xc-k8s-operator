@@ -3,7 +3,6 @@ package v1alpha1
 const (
 	FinalizerXCCleanup = "xc.f5.com/cleanup"
 
-	AnnotationXCNamespace    = "f5xc.io/namespace"
 	AnnotationDeletionPolicy = "f5xc.io/deletion-policy"
 
 	DeletionPolicyOrphan = "orphan"

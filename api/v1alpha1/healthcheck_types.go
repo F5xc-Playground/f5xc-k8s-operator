@@ -30,6 +30,8 @@ type HealthCheckList struct {
 }
 
 type HealthCheckSpec struct {
+	// +kubebuilder:validation:Required
+	XCNamespace        string               `json:"xcNamespace"`
 	HTTPHealthCheck    *HTTPHealthCheckSpec `json:"httpHealthCheck,omitempty"`
 	TCPHealthCheck     *TCPHealthCheckSpec  `json:"tcpHealthCheck,omitempty"`
 	HealthyThreshold   *uint32              `json:"healthyThreshold,omitempty"`

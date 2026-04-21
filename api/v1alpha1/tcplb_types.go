@@ -32,6 +32,8 @@ type TCPLoadBalancerList struct {
 
 // TCPLoadBalancerSpec defines the desired state of a TCPLoadBalancer.
 type TCPLoadBalancerSpec struct {
+	// +kubebuilder:validation:Required
+	XCNamespace string      `json:"xcNamespace"`
 	Domains     []string    `json:"domains"`
 	ListenPort  uint32      `json:"listenPort"`
 	OriginPools []RoutePool `json:"originPools"`
