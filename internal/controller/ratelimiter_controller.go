@@ -52,7 +52,7 @@ func (r *RateLimiterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, nil
 	}
 
-	xcNS := resolveRateLimiterXCNamespace(&cr)
+	xcNS := cr.Spec.XCNamespace
 	xc := r.ClientSet.Get()
 
 	current, err := xc.GetRateLimiter(ctx, xcNS, cr.Name)
@@ -122,7 +122,7 @@ func (r *RateLimiterReconciler) handleDeletion(ctx context.Context, log logr.Log
 
 	policy := cr.Annotations[v1alpha1.AnnotationDeletionPolicy]
 	if policy != v1alpha1.DeletionPolicyOrphan {
-		xcNS := resolveRateLimiterXCNamespace(cr)
+		xcNS := cr.Spec.XCNamespace
 		xc := r.ClientSet.Get()
 		err := xc.DeleteRateLimiter(ctx, xcNS, cr.Name)
 		if err != nil && !errors.Is(err, xcclient.ErrNotFound) {
@@ -220,13 +220,6 @@ func (r *RateLimiterReconciler) setCondition(cr *v1alpha1.RateLimiter, condType 
 		Reason:             reason,
 		Message:            message,
 	})
-}
-
-func resolveRateLimiterXCNamespace(cr *v1alpha1.RateLimiter) string {
-	if ns, ok := cr.Annotations[v1alpha1.AnnotationXCNamespace]; ok && ns != "" {
-		return ns
-	}
-	return cr.Namespace
 }
 
 func (r *RateLimiterReconciler) SetupWithManager(mgr ctrl.Manager) error {

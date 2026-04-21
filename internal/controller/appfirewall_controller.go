@@ -52,7 +52,7 @@ func (r *AppFirewallReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, nil
 	}
 
-	xcNS := resolveAppFirewallXCNamespace(&cr)
+	xcNS := cr.Spec.XCNamespace
 	xc := r.ClientSet.Get()
 
 	current, err := xc.GetAppFirewall(ctx, xcNS, cr.Name)
@@ -122,7 +122,7 @@ func (r *AppFirewallReconciler) handleDeletion(ctx context.Context, log logr.Log
 
 	policy := cr.Annotations[v1alpha1.AnnotationDeletionPolicy]
 	if policy != v1alpha1.DeletionPolicyOrphan {
-		xcNS := resolveAppFirewallXCNamespace(cr)
+		xcNS := cr.Spec.XCNamespace
 		xc := r.ClientSet.Get()
 		err := xc.DeleteAppFirewall(ctx, xcNS, cr.Name)
 		if err != nil && !errors.Is(err, xcclient.ErrNotFound) {
@@ -220,13 +220,6 @@ func (r *AppFirewallReconciler) setCondition(cr *v1alpha1.AppFirewall, condType 
 		Reason:             reason,
 		Message:            message,
 	})
-}
-
-func resolveAppFirewallXCNamespace(cr *v1alpha1.AppFirewall) string {
-	if ns, ok := cr.Annotations[v1alpha1.AnnotationXCNamespace]; ok && ns != "" {
-		return ns
-	}
-	return cr.Namespace
 }
 
 func (r *AppFirewallReconciler) SetupWithManager(mgr ctrl.Manager) error {

@@ -362,14 +362,14 @@ func TestHTTPLoadBalancer_DeletionOrphanPolicy(t *testing.T) {
 	}
 }
 
-func TestHTTPLoadBalancer_XCNamespaceAnnotation(t *testing.T) {
+func TestHTTPLoadBalancer_XCNamespaceSpec(t *testing.T) {
 	setupSuite(t)
 	fake := &fakeHTTPLoadBalancerXCClient{}
 	r := newHTTPLoadBalancerReconciler(fake)
 	startHTTPLoadBalancerManager(t, r)
 
 	cr := sampleHTTPLoadBalancer("hlb-xcns", "default")
-	cr.Annotations = map[string]string{v1alpha1.AnnotationXCNamespace: "custom-xc-ns"}
+	cr.Spec.XCNamespace = "custom-xc-ns"
 	if err := testClient.Create(testCtx, cr); err != nil {
 		t.Fatalf("creating CR: %v", err)
 	}

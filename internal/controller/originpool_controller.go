@@ -82,7 +82,7 @@ func (r *OriginPoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 	}
 
-	xcNS := resolveXCNamespace(&cr)
+	xcNS := cr.Spec.XCNamespace
 	xc := r.ClientSet.Get()
 
 	current, err := xc.GetOriginPool(ctx, xcNS, cr.Name)
@@ -152,7 +152,7 @@ func (r *OriginPoolReconciler) handleDeletion(ctx context.Context, log logr.Logg
 
 	policy := cr.Annotations[v1alpha1.AnnotationDeletionPolicy]
 	if policy != v1alpha1.DeletionPolicyOrphan {
-		xcNS := resolveXCNamespace(cr)
+		xcNS := cr.Spec.XCNamespace
 		xc := r.ClientSet.Get()
 		err := xc.DeleteOriginPool(ctx, xcNS, cr.Name)
 		if err != nil && !errors.Is(err, xcclient.ErrNotFound) {
@@ -253,13 +253,6 @@ func (r *OriginPoolReconciler) setCondition(cr *v1alpha1.OriginPool, condType st
 		Reason:             reason,
 		Message:            message,
 	})
-}
-
-func resolveXCNamespace(cr *v1alpha1.OriginPool) string {
-	if ns, ok := cr.Annotations[v1alpha1.AnnotationXCNamespace]; ok && ns != "" {
-		return ns
-	}
-	return cr.Namespace
 }
 
 func operationFailReason(op string) string {

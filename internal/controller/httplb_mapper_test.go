@@ -15,7 +15,8 @@ func sampleHTTPLoadBalancer(name, namespace string) *v1alpha1.HTTPLoadBalancer {
 	return &v1alpha1.HTTPLoadBalancer{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: v1alpha1.HTTPLoadBalancerSpec{
-			Domains: []string{"app.example.com"},
+			XCNamespace: namespace,
+			Domains:     []string{"app.example.com"},
 			DefaultRoutePools: []v1alpha1.RoutePool{
 				{Pool: v1alpha1.ObjectRef{Name: "pool1"}, Weight: uint32Ptr(1)},
 			},

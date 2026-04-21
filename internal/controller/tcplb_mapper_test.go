@@ -15,8 +15,9 @@ func sampleTCPLoadBalancer(name, namespace string) *v1alpha1.TCPLoadBalancer {
 	return &v1alpha1.TCPLoadBalancer{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: v1alpha1.TCPLoadBalancerSpec{
-			Domains:    []string{"tcp.example.com"},
-			ListenPort: 443,
+			XCNamespace: namespace,
+			Domains:     []string{"tcp.example.com"},
+			ListenPort:  443,
 			OriginPools: []v1alpha1.RoutePool{
 				{Pool: v1alpha1.ObjectRef{Name: "pool1"}, Weight: uint32Ptr(1)},
 			},

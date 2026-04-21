@@ -16,7 +16,8 @@ func sampleAppFirewall(name, namespace string) *v1alpha1.AppFirewall {
 	return &v1alpha1.AppFirewall{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: v1alpha1.AppFirewallSpec{
-			Blocking: &apiextensionsv1.JSON{Raw: []byte("{}")},
+			XCNamespace: namespace,
+			Blocking:    &apiextensionsv1.JSON{Raw: []byte("{}")},
 		},
 	}
 }

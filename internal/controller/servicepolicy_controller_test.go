@@ -102,7 +102,8 @@ func sampleServicePolicy(name, namespace string) *v1alpha1.ServicePolicy {
 	return &v1alpha1.ServicePolicy{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: v1alpha1.ServicePolicySpec{
-			Algo: "FIRST_MATCH",
+			XCNamespace: namespace,
+			Algo:        "FIRST_MATCH",
 		},
 	}
 }
@@ -348,14 +349,14 @@ func TestServicePolicy_DeletionOrphanPolicy(t *testing.T) {
 	}
 }
 
-func TestServicePolicy_XCNamespaceAnnotation(t *testing.T) {
+func TestServicePolicy_XCNamespaceSpec(t *testing.T) {
 	setupSuite(t)
 	fake := &fakeServicePolicyXCClient{}
 	r := newServicePolicyReconciler(fake)
 	startServicePolicyManager(t, r)
 
 	cr := sampleServicePolicy("sp-xcns", "default")
-	cr.Annotations = map[string]string{v1alpha1.AnnotationXCNamespace: "custom-xc-ns"}
+	cr.Spec.XCNamespace = "custom-xc-ns"
 	if err := testClient.Create(testCtx, cr); err != nil {
 		t.Fatalf("creating CR: %v", err)
 	}

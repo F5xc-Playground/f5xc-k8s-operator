@@ -339,14 +339,14 @@ func TestAppFirewall_DeletionOrphanPolicy(t *testing.T) {
 	}
 }
 
-func TestAppFirewall_XCNamespaceAnnotation(t *testing.T) {
+func TestAppFirewall_XCNamespaceSpec(t *testing.T) {
 	setupSuite(t)
 	fake := &fakeAppFirewallXCClient{}
 	r := newAppFirewallReconciler(fake)
 	startAppFirewallManager(t, r)
 
 	cr := sampleAppFirewall("afw-xcns", "default")
-	cr.Annotations = map[string]string{v1alpha1.AnnotationXCNamespace: "custom-xc-ns"}
+	cr.Spec.XCNamespace = "custom-xc-ns"
 	if err := testClient.Create(testCtx, cr); err != nil {
 		t.Fatalf("creating CR: %v", err)
 	}

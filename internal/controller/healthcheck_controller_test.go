@@ -102,6 +102,7 @@ func sampleHealthCheck(name, namespace string) *v1alpha1.HealthCheck {
 	return &v1alpha1.HealthCheck{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: v1alpha1.HealthCheckSpec{
+			XCNamespace:     namespace,
 			HTTPHealthCheck: &v1alpha1.HTTPHealthCheckSpec{Path: "/healthz"},
 		},
 	}
@@ -348,14 +349,14 @@ func TestHealthCheck_DeletionOrphanPolicy(t *testing.T) {
 	}
 }
 
-func TestHealthCheck_XCNamespaceAnnotation(t *testing.T) {
+func TestHealthCheck_XCNamespaceSpec(t *testing.T) {
 	setupSuite(t)
 	fake := &fakeHealthCheckXCClient{}
 	r := newHealthCheckReconciler(fake)
 	startHealthCheckManager(t, r)
 
 	cr := sampleHealthCheck("hc-xcns", "default")
-	cr.Annotations = map[string]string{v1alpha1.AnnotationXCNamespace: "custom-xc-ns"}
+	cr.Spec.XCNamespace = "custom-xc-ns"
 	if err := testClient.Create(testCtx, cr); err != nil {
 		t.Fatalf("creating CR: %v", err)
 	}

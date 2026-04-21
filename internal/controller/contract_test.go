@@ -77,11 +77,9 @@ func TestContract_OriginPoolCRDLifecycle(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contract-pool",
 			Namespace: "contract-op",
-			Annotations: map[string]string{
-				v1alpha1.AnnotationXCNamespace: xcNS,
-			},
 		},
 		Spec: v1alpha1.OriginPoolSpec{
+			XCNamespace: xcNS,
 			OriginServers: []v1alpha1.OriginServer{
 				{PublicIP: &v1alpha1.PublicIP{IP: "203.0.113.10"}},
 			},
@@ -141,13 +139,11 @@ func TestContract_RateLimiterCRDLifecycle(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contract-rl",
 			Namespace: "contract-rl",
-			Annotations: map[string]string{
-				v1alpha1.AnnotationXCNamespace: xcNS,
-			},
 		},
 		Spec: v1alpha1.RateLimiterSpec{
-			Threshold: 100,
-			Unit:      "MINUTE",
+			XCNamespace: xcNS,
+			Threshold:   100,
+			Unit:        "MINUTE",
 		},
 	}
 	require.NoError(t, testClient.Create(testCtx, cr))
@@ -204,11 +200,9 @@ func TestContract_HealthCheckCRDLifecycle(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contract-hc",
 			Namespace: "contract-hc",
-			Annotations: map[string]string{
-				v1alpha1.AnnotationXCNamespace: xcNS,
-			},
 		},
 		Spec: v1alpha1.HealthCheckSpec{
+			XCNamespace:     xcNS,
 			HTTPHealthCheck: &v1alpha1.HTTPHealthCheckSpec{Path: "/health"},
 		},
 	}
@@ -266,12 +260,10 @@ func TestContract_ServicePolicyCRDLifecycle(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contract-sp",
 			Namespace: "contract-sp",
-			Annotations: map[string]string{
-				v1alpha1.AnnotationXCNamespace: xcNS,
-			},
 		},
 		Spec: v1alpha1.ServicePolicySpec{
-			Algo: "FIRST_MATCH",
+			XCNamespace: xcNS,
+			Algo:        "FIRST_MATCH",
 		},
 	}
 	require.NoError(t, testClient.Create(testCtx, cr))
@@ -328,12 +320,10 @@ func TestContract_AppFirewallCRDLifecycle(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contract-afw",
 			Namespace: "contract-afw",
-			Annotations: map[string]string{
-				v1alpha1.AnnotationXCNamespace: xcNS,
-			},
 		},
 		Spec: v1alpha1.AppFirewallSpec{
-			Blocking: &apiextensionsv1.JSON{Raw: []byte("{}")},
+			XCNamespace: xcNS,
+			Blocking:    &apiextensionsv1.JSON{Raw: []byte("{}")},
 		},
 	}
 	require.NoError(t, testClient.Create(testCtx, cr))
@@ -390,13 +380,11 @@ func TestContract_TCPLoadBalancerCRDLifecycle(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contract-tlb",
 			Namespace: "contract-tlb",
-			Annotations: map[string]string{
-				v1alpha1.AnnotationXCNamespace: xcNS,
-			},
 		},
 		Spec: v1alpha1.TCPLoadBalancerSpec{
-			Domains:    []string{"tcp.test.com"},
-			ListenPort: 443,
+			XCNamespace: xcNS,
+			Domains:     []string{"tcp.test.com"},
+			ListenPort:  443,
 			OriginPools: []v1alpha1.RoutePool{
 				{Pool: v1alpha1.ObjectRef{Name: "test-pool"}, Weight: uint32Ptr(1)},
 			},
@@ -456,12 +444,10 @@ func TestContract_HTTPLoadBalancerCRDLifecycle(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contract-hlb",
 			Namespace: "contract-hlb",
-			Annotations: map[string]string{
-				v1alpha1.AnnotationXCNamespace: xcNS,
-			},
 		},
 		Spec: v1alpha1.HTTPLoadBalancerSpec{
-			Domains: []string{"http.test.com"},
+			XCNamespace: xcNS,
+			Domains:     []string{"http.test.com"},
 			DefaultRoutePools: []v1alpha1.RoutePool{
 				{Pool: v1alpha1.ObjectRef{Name: "test-pool"}, Weight: uint32Ptr(1)},
 			},

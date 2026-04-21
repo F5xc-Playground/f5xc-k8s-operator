@@ -52,7 +52,7 @@ func (r *TCPLoadBalancerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
-	xcNS := resolveTCPLoadBalancerXCNamespace(&cr)
+	xcNS := cr.Spec.XCNamespace
 	xc := r.ClientSet.Get()
 
 	current, err := xc.GetTCPLoadBalancer(ctx, xcNS, cr.Name)
@@ -122,7 +122,7 @@ func (r *TCPLoadBalancerReconciler) handleDeletion(ctx context.Context, log logr
 
 	policy := cr.Annotations[v1alpha1.AnnotationDeletionPolicy]
 	if policy != v1alpha1.DeletionPolicyOrphan {
-		xcNS := resolveTCPLoadBalancerXCNamespace(cr)
+		xcNS := cr.Spec.XCNamespace
 		xc := r.ClientSet.Get()
 		err := xc.DeleteTCPLoadBalancer(ctx, xcNS, cr.Name)
 		if err != nil && !errors.Is(err, xcclient.ErrNotFound) {
@@ -220,13 +220,6 @@ func (r *TCPLoadBalancerReconciler) setCondition(cr *v1alpha1.TCPLoadBalancer, c
 		Reason:             reason,
 		Message:            message,
 	})
-}
-
-func resolveTCPLoadBalancerXCNamespace(cr *v1alpha1.TCPLoadBalancer) string {
-	if ns, ok := cr.Annotations[v1alpha1.AnnotationXCNamespace]; ok && ns != "" {
-		return ns
-	}
-	return cr.Namespace
 }
 
 func (r *TCPLoadBalancerReconciler) SetupWithManager(mgr ctrl.Manager) error {

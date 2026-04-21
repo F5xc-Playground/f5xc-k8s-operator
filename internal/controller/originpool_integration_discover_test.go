@@ -48,7 +48,8 @@ func TestIntegrationDiscover_CreateWithServiceLB(t *testing.T) {
 	cr := &v1alpha1.OriginPool{
 		ObjectMeta: metav1.ObjectMeta{Name: "intd-pool", Namespace: "intd-create"},
 		Spec: v1alpha1.OriginPoolSpec{
-			Port: 443,
+			XCNamespace: "intd-create",
+			Port:        443,
 			OriginServers: []v1alpha1.OriginServer{
 				{Discover: &v1alpha1.OriginServerDiscover{
 					Resource: v1alpha1.ResourceRef{Kind: "Service", Name: "intd-svc"},
@@ -114,7 +115,8 @@ func TestIntegrationDiscover_PendingThenResolved(t *testing.T) {
 	cr := &v1alpha1.OriginPool{
 		ObjectMeta: metav1.ObjectMeta{Name: "intd-pool-pending", Namespace: "intd-pending"},
 		Spec: v1alpha1.OriginPoolSpec{
-			Port: 443,
+			XCNamespace: "intd-pending",
+			Port:        443,
 			OriginServers: []v1alpha1.OriginServer{
 				{Discover: &v1alpha1.OriginServerDiscover{
 					Resource: v1alpha1.ResourceRef{Kind: "Service", Name: "intd-pending-svc"},
@@ -171,7 +173,8 @@ func TestIntegrationDiscover_ServiceIPChanges(t *testing.T) {
 	cr := &v1alpha1.OriginPool{
 		ObjectMeta: metav1.ObjectMeta{Name: "intd-pool-change", Namespace: "intd-change"},
 		Spec: v1alpha1.OriginPoolSpec{
-			Port: 443,
+			XCNamespace: "intd-change",
+			Port:        443,
 			OriginServers: []v1alpha1.OriginServer{
 				{Discover: &v1alpha1.OriginServerDiscover{
 					Resource: v1alpha1.ResourceRef{Kind: "Service", Name: "intd-change-svc"},
@@ -252,7 +255,8 @@ func TestIntegrationDiscover_DeleteWithDiscoverOrigin(t *testing.T) {
 	cr := &v1alpha1.OriginPool{
 		ObjectMeta: metav1.ObjectMeta{Name: "intd-pool-del", Namespace: "intd-delete"},
 		Spec: v1alpha1.OriginPoolSpec{
-			Port: 443,
+			XCNamespace: "intd-delete",
+			Port:        443,
 			OriginServers: []v1alpha1.OriginServer{
 				{Discover: &v1alpha1.OriginServerDiscover{
 					Resource: v1alpha1.ResourceRef{Kind: "Service", Name: "intd-del-svc"},

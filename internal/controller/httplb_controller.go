@@ -52,7 +52,7 @@ func (r *HTTPLoadBalancerReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, nil
 	}
 
-	xcNS := resolveHTTPLoadBalancerXCNamespace(&cr)
+	xcNS := cr.Spec.XCNamespace
 	xc := r.ClientSet.Get()
 
 	current, err := xc.GetHTTPLoadBalancer(ctx, xcNS, cr.Name)
@@ -122,7 +122,7 @@ func (r *HTTPLoadBalancerReconciler) handleDeletion(ctx context.Context, log log
 
 	policy := cr.Annotations[v1alpha1.AnnotationDeletionPolicy]
 	if policy != v1alpha1.DeletionPolicyOrphan {
-		xcNS := resolveHTTPLoadBalancerXCNamespace(cr)
+		xcNS := cr.Spec.XCNamespace
 		xc := r.ClientSet.Get()
 		err := xc.DeleteHTTPLoadBalancer(ctx, xcNS, cr.Name)
 		if err != nil && !errors.Is(err, xcclient.ErrNotFound) {
@@ -220,13 +220,6 @@ func (r *HTTPLoadBalancerReconciler) setCondition(cr *v1alpha1.HTTPLoadBalancer,
 		Reason:             reason,
 		Message:            message,
 	})
-}
-
-func resolveHTTPLoadBalancerXCNamespace(cr *v1alpha1.HTTPLoadBalancer) string {
-	if ns, ok := cr.Annotations[v1alpha1.AnnotationXCNamespace]; ok && ns != "" {
-		return ns
-	}
-	return cr.Namespace
 }
 
 func (r *HTTPLoadBalancerReconciler) SetupWithManager(mgr ctrl.Manager) error {

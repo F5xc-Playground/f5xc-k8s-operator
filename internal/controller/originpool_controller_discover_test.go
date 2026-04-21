@@ -37,7 +37,8 @@ func TestDiscover_ServiceLoadBalancerIP(t *testing.T) {
 	cr := &v1alpha1.OriginPool{
 		ObjectMeta: metav1.ObjectMeta{Name: "disc-pool-ip", Namespace: "disc-svc-ip"},
 		Spec: v1alpha1.OriginPoolSpec{
-			Port: 443,
+			XCNamespace: "disc-svc-ip",
+			Port:        443,
 			OriginServers: []v1alpha1.OriginServer{
 				{Discover: &v1alpha1.OriginServerDiscover{
 					Resource: v1alpha1.ResourceRef{Kind: "Service", Name: "my-svc"},
@@ -108,7 +109,8 @@ func TestDiscover_IngressHostname(t *testing.T) {
 	cr := &v1alpha1.OriginPool{
 		ObjectMeta: metav1.ObjectMeta{Name: "disc-pool-ing", Namespace: "disc-ing"},
 		Spec: v1alpha1.OriginPoolSpec{
-			Port: 443,
+			XCNamespace: "disc-ing",
+			Port:        443,
 			OriginServers: []v1alpha1.OriginServer{
 				{Discover: &v1alpha1.OriginServerDiscover{
 					Resource: v1alpha1.ResourceRef{Kind: "Ingress", Name: "my-ing"},
@@ -151,7 +153,8 @@ func TestDiscover_Pending(t *testing.T) {
 	cr := &v1alpha1.OriginPool{
 		ObjectMeta: metav1.ObjectMeta{Name: "disc-pool-pending", Namespace: "disc-pending"},
 		Spec: v1alpha1.OriginPoolSpec{
-			Port: 443,
+			XCNamespace: "disc-pending",
+			Port:        443,
 			OriginServers: []v1alpha1.OriginServer{
 				{Discover: &v1alpha1.OriginServerDiscover{
 					Resource: v1alpha1.ResourceRef{Kind: "Service", Name: "pending-svc"},
@@ -199,7 +202,8 @@ func TestDiscover_MixedStaticAndDiscover(t *testing.T) {
 	cr := &v1alpha1.OriginPool{
 		ObjectMeta: metav1.ObjectMeta{Name: "disc-pool-mixed", Namespace: "disc-mixed"},
 		Spec: v1alpha1.OriginPoolSpec{
-			Port: 443,
+			XCNamespace: "disc-mixed",
+			Port:        443,
 			OriginServers: []v1alpha1.OriginServer{
 				{PublicIP: &v1alpha1.PublicIP{IP: "1.2.3.4"}},
 				{Discover: &v1alpha1.OriginServerDiscover{
@@ -242,7 +246,8 @@ func TestDiscover_AddressOverride(t *testing.T) {
 	cr := &v1alpha1.OriginPool{
 		ObjectMeta: metav1.ObjectMeta{Name: "disc-pool-override", Namespace: "disc-override"},
 		Spec: v1alpha1.OriginPoolSpec{
-			Port: 443,
+			XCNamespace: "disc-override",
+			Port:        443,
 			OriginServers: []v1alpha1.OriginServer{
 				{Discover: &v1alpha1.OriginServerDiscover{
 					Resource:        v1alpha1.ResourceRef{Kind: "Service", Name: "override-svc"},
@@ -275,7 +280,8 @@ func TestDiscover_MissingResource(t *testing.T) {
 	cr := &v1alpha1.OriginPool{
 		ObjectMeta: metav1.ObjectMeta{Name: "disc-pool-missing", Namespace: "disc-missing"},
 		Spec: v1alpha1.OriginPoolSpec{
-			Port: 443,
+			XCNamespace: "disc-missing",
+			Port:        443,
 			OriginServers: []v1alpha1.OriginServer{
 				{Discover: &v1alpha1.OriginServerDiscover{
 					Resource: v1alpha1.ResourceRef{Kind: "Service", Name: "nonexistent"},
@@ -320,7 +326,8 @@ func TestDiscover_CrossNamespace(t *testing.T) {
 	cr := &v1alpha1.OriginPool{
 		ObjectMeta: metav1.ObjectMeta{Name: "disc-pool-xns", Namespace: "disc-xns-a"},
 		Spec: v1alpha1.OriginPoolSpec{
-			Port: 443,
+			XCNamespace: "disc-xns-a",
+			Port:        443,
 			OriginServers: []v1alpha1.OriginServer{
 				{Discover: &v1alpha1.OriginServerDiscover{
 					Resource: v1alpha1.ResourceRef{Kind: "Service", Name: "xns-svc", Namespace: "disc-xns-b"},

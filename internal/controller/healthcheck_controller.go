@@ -52,7 +52,7 @@ func (r *HealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, nil
 	}
 
-	xcNS := resolveHealthCheckXCNamespace(&cr)
+	xcNS := cr.Spec.XCNamespace
 	xc := r.ClientSet.Get()
 
 	current, err := xc.GetHealthCheck(ctx, xcNS, cr.Name)
@@ -122,7 +122,7 @@ func (r *HealthCheckReconciler) handleDeletion(ctx context.Context, log logr.Log
 
 	policy := cr.Annotations[v1alpha1.AnnotationDeletionPolicy]
 	if policy != v1alpha1.DeletionPolicyOrphan {
-		xcNS := resolveHealthCheckXCNamespace(cr)
+		xcNS := cr.Spec.XCNamespace
 		xc := r.ClientSet.Get()
 		err := xc.DeleteHealthCheck(ctx, xcNS, cr.Name)
 		if err != nil && !errors.Is(err, xcclient.ErrNotFound) {
@@ -216,13 +216,6 @@ func (r *HealthCheckReconciler) setCondition(cr *v1alpha1.HealthCheck, condType 
 		Reason:             reason,
 		Message:            message,
 	})
-}
-
-func resolveHealthCheckXCNamespace(cr *v1alpha1.HealthCheck) string {
-	if ns, ok := cr.Annotations[v1alpha1.AnnotationXCNamespace]; ok && ns != "" {
-		return ns
-	}
-	return cr.Namespace
 }
 
 func (r *HealthCheckReconciler) SetupWithManager(mgr ctrl.Manager) error {

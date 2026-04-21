@@ -52,7 +52,7 @@ func (r *ServicePolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, nil
 	}
 
-	xcNS := resolveServicePolicyXCNamespace(&cr)
+	xcNS := cr.Spec.XCNamespace
 	xc := r.ClientSet.Get()
 
 	current, err := xc.GetServicePolicy(ctx, xcNS, cr.Name)
@@ -122,7 +122,7 @@ func (r *ServicePolicyReconciler) handleDeletion(ctx context.Context, log logr.L
 
 	policy := cr.Annotations[v1alpha1.AnnotationDeletionPolicy]
 	if policy != v1alpha1.DeletionPolicyOrphan {
-		xcNS := resolveServicePolicyXCNamespace(cr)
+		xcNS := cr.Spec.XCNamespace
 		xc := r.ClientSet.Get()
 		err := xc.DeleteServicePolicy(ctx, xcNS, cr.Name)
 		if err != nil && !errors.Is(err, xcclient.ErrNotFound) {
@@ -220,13 +220,6 @@ func (r *ServicePolicyReconciler) setCondition(cr *v1alpha1.ServicePolicy, condT
 		Reason:             reason,
 		Message:            message,
 	})
-}
-
-func resolveServicePolicyXCNamespace(cr *v1alpha1.ServicePolicy) string {
-	if ns, ok := cr.Annotations[v1alpha1.AnnotationXCNamespace]; ok && ns != "" {
-		return ns
-	}
-	return cr.Namespace
 }
 
 func (r *ServicePolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {

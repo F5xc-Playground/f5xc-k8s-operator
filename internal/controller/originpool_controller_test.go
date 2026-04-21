@@ -228,6 +228,7 @@ func sampleOriginPool(name, namespace string) *v1alpha1.OriginPool {
 			Namespace: namespace,
 		},
 		Spec: v1alpha1.OriginPoolSpec{
+			XCNamespace: namespace,
 			OriginServers: []v1alpha1.OriginServer{
 				{
 					PublicIP: &v1alpha1.PublicIP{IP: "1.2.3.4"},
@@ -508,16 +509,14 @@ func TestReconcile_DeletionOrphanPolicy(t *testing.T) {
 	}
 }
 
-func TestReconcile_XCNamespaceAnnotation(t *testing.T) {
+func TestReconcile_XCNamespaceSpec(t *testing.T) {
 	setupSuite(t)
 	fake := &fakeXCClient{}
 	r := newReconciler(fake)
 	startManager(t, r)
 
 	cr := sampleOriginPool("xcns-test", "default")
-	cr.Annotations = map[string]string{
-		v1alpha1.AnnotationXCNamespace: "custom-xc-ns",
-	}
+	cr.Spec.XCNamespace = "custom-xc-ns"
 	if err := testClient.Create(testCtx, cr); err != nil {
 		t.Fatalf("creating CR: %v", err)
 	}

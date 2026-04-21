@@ -102,8 +102,9 @@ func sampleRateLimiter(name, namespace string) *v1alpha1.RateLimiter {
 	return &v1alpha1.RateLimiter{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: v1alpha1.RateLimiterSpec{
-			Threshold: 100,
-			Unit:      "MINUTE",
+			XCNamespace: namespace,
+			Threshold:   100,
+			Unit:        "MINUTE",
 		},
 	}
 }
@@ -349,14 +350,14 @@ func TestRateLimiter_DeletionOrphanPolicy(t *testing.T) {
 	}
 }
 
-func TestRateLimiter_XCNamespaceAnnotation(t *testing.T) {
+func TestRateLimiter_XCNamespaceSpec(t *testing.T) {
 	setupSuite(t)
 	fake := &fakeRateLimiterXCClient{}
 	r := newRateLimiterReconciler(fake)
 	startRateLimiterManager(t, r)
 
 	cr := sampleRateLimiter("rl-xcns", "default")
-	cr.Annotations = map[string]string{v1alpha1.AnnotationXCNamespace: "custom-xc-ns"}
+	cr.Spec.XCNamespace = "custom-xc-ns"
 	if err := testClient.Create(testCtx, cr); err != nil {
 		t.Fatalf("creating CR: %v", err)
 	}
