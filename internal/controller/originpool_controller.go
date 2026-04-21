@@ -7,12 +7,16 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	routev1 "github.com/openshift/api/route/v1"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
 	"github.com/kreynolds/f5xc-k8s-operator/internal/xcclient"
@@ -28,6 +32,11 @@ type OriginPoolReconciler struct {
 // +kubebuilder:rbac:groups=xc.f5.com,resources=originpools,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=xc.f5.com,resources=originpools/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=xc.f5.com,resources=originpools/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch
+// +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=gateways,verbs=get;list;watch
+// +kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;watch
 
 func (r *OriginPoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("originpool", req.NamespacedName)
@@ -52,6 +61,24 @@ func (r *OriginPoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, nil
 	}
 
+	// Resolve discover origins
+	var resolved []*ResolvedOrigin
+	if hasDiscoverOrigins(&cr) {
+		var discovered []v1alpha1.DiscoveredOrigin
+		var allResolved bool
+		resolved, discovered, allResolved = r.resolveAllOrigins(ctx, &cr)
+		cr.Status.DiscoveredOrigins = discovered
+
+		if !allResolved {
+			r.setCondition(&cr, v1alpha1.ConditionReady, metav1.ConditionFalse, v1alpha1.ReasonDiscoveryPending, "one or more discover origins are pending")
+			cr.Status.ObservedGeneration = cr.Generation
+			if err := r.Status().Update(ctx, &cr); err != nil {
+				return ctrl.Result{}, err
+			}
+			return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+		}
+	}
+
 	xcNS := resolveXCNamespace(&cr)
 	xc := r.ClientSet.Get()
 
@@ -61,14 +88,14 @@ func (r *OriginPoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	if errors.Is(err, xcclient.ErrNotFound) {
-		return r.handleCreate(ctx, log, &cr, xc, xcNS)
+		return r.handleCreate(ctx, log, &cr, xc, xcNS, resolved)
 	}
 
-	return r.handleUpdate(ctx, log, &cr, xc, xcNS, current)
+	return r.handleUpdate(ctx, log, &cr, xc, xcNS, current, resolved)
 }
 
-func (r *OriginPoolReconciler) handleCreate(ctx context.Context, log logr.Logger, cr *v1alpha1.OriginPool, xc xcclient.XCClient, xcNS string) (ctrl.Result, error) {
-	create := buildOriginPoolCreate(cr, xcNS, nil)
+func (r *OriginPoolReconciler) handleCreate(ctx context.Context, log logr.Logger, cr *v1alpha1.OriginPool, xc xcclient.XCClient, xcNS string, resolved []*ResolvedOrigin) (ctrl.Result, error) {
+	create := buildOriginPoolCreate(cr, xcNS, resolved)
 	result, err := xc.CreateOriginPool(ctx, xcNS, create)
 	if err != nil {
 		return r.handleXCError(ctx, log, cr, err, "create")
@@ -82,8 +109,8 @@ func (r *OriginPoolReconciler) handleCreate(ctx context.Context, log logr.Logger
 	return ctrl.Result{}, nil
 }
 
-func (r *OriginPoolReconciler) handleUpdate(ctx context.Context, log logr.Logger, cr *v1alpha1.OriginPool, xc xcclient.XCClient, xcNS string, current *xcclient.OriginPool) (ctrl.Result, error) {
-	desiredJSON, err := buildOriginPoolDesiredSpecJSON(cr, xcNS, nil)
+func (r *OriginPoolReconciler) handleUpdate(ctx context.Context, log logr.Logger, cr *v1alpha1.OriginPool, xc xcclient.XCClient, xcNS string, current *xcclient.OriginPool, resolved []*ResolvedOrigin) (ctrl.Result, error) {
+	desiredJSON, err := buildOriginPoolDesiredSpecJSON(cr, xcNS, resolved)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("building desired spec JSON: %w", err)
 	}
@@ -101,7 +128,7 @@ func (r *OriginPoolReconciler) handleUpdate(ctx context.Context, log logr.Logger
 		return ctrl.Result{}, nil
 	}
 
-	replace := buildOriginPoolReplace(cr, xcNS, current.Metadata.ResourceVersion, nil)
+	replace := buildOriginPoolReplace(cr, xcNS, current.Metadata.ResourceVersion, resolved)
 	result, err := xc.ReplaceOriginPool(ctx, xcNS, cr.Name, replace)
 	if err != nil {
 		return r.handleXCError(ctx, log, cr, err, "update")
@@ -242,6 +269,99 @@ func operationFailReason(op string) string {
 		return v1alpha1.ReasonDeleteFailed
 	default:
 		return v1alpha1.ReasonCreateFailed
+	}
+}
+
+func hasDiscoverOrigins(cr *v1alpha1.OriginPool) bool {
+	for _, os := range cr.Spec.OriginServers {
+		if os.Discover != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *OriginPoolReconciler) resolveAllOrigins(ctx context.Context, cr *v1alpha1.OriginPool) ([]*ResolvedOrigin, []v1alpha1.DiscoveredOrigin, bool) {
+	resolved := make([]*ResolvedOrigin, len(cr.Spec.OriginServers))
+	var discovered []v1alpha1.DiscoveredOrigin
+	allResolved := true
+
+	for i, os := range cr.Spec.OriginServers {
+		if os.Discover == nil {
+			continue
+		}
+
+		ref := os.Discover.Resource
+		ns := ref.Namespace
+		if ns == "" {
+			ns = cr.Namespace
+		}
+
+		raw := r.resolveResource(ctx, ref.Kind, ns, ref.Name)
+		final := ResolveDiscover(os.Discover, raw)
+
+		do := v1alpha1.DiscoveredOrigin{
+			Resource: v1alpha1.ResourceRef{Kind: ref.Kind, Name: ref.Name, Namespace: ns},
+			Status:   v1alpha1.DiscoveryStatusResolved,
+		}
+
+		if final.Pending {
+			do.Status = v1alpha1.DiscoveryStatusPending
+			do.Message = final.Message
+			allResolved = false
+		} else {
+			do.Address = final.Address
+			do.Port = final.Port
+			do.AddressType = final.AddressType
+			resolved[i] = &final
+		}
+
+		discovered = append(discovered, do)
+	}
+
+	return resolved, discovered, allResolved
+}
+
+func (r *OriginPoolReconciler) resolveResource(ctx context.Context, kind, ns, name string) ResolvedOrigin {
+	key := client.ObjectKey{Namespace: ns, Name: name}
+
+	switch kind {
+	case "Service":
+		var svc corev1.Service
+		if err := r.Get(ctx, key, &svc); err != nil {
+			return ResolvedOrigin{Pending: true, Message: fmt.Sprintf("Service %s/%s not found: %v", ns, name, err)}
+		}
+		var nodes corev1.NodeList
+		if svc.Spec.Type == corev1.ServiceTypeNodePort {
+			if err := r.List(ctx, &nodes); err != nil {
+				return ResolvedOrigin{Pending: true, Message: fmt.Sprintf("failed to list nodes: %v", err)}
+			}
+		}
+		return ResolveService(&svc, nodes.Items)
+
+	case "Ingress":
+		var ing networkingv1.Ingress
+		if err := r.Get(ctx, key, &ing); err != nil {
+			return ResolvedOrigin{Pending: true, Message: fmt.Sprintf("Ingress %s/%s not found: %v", ns, name, err)}
+		}
+		return ResolveIngress(&ing)
+
+	case "Gateway":
+		var gw gatewayv1.Gateway
+		if err := r.Get(ctx, key, &gw); err != nil {
+			return ResolvedOrigin{Pending: true, Message: fmt.Sprintf("Gateway %s/%s not found: %v", ns, name, err)}
+		}
+		return ResolveGateway(&gw)
+
+	case "Route":
+		var route routev1.Route
+		if err := r.Get(ctx, key, &route); err != nil {
+			return ResolvedOrigin{Pending: true, Message: fmt.Sprintf("Route %s/%s not found: %v", ns, name, err)}
+		}
+		return ResolveRoute(&route)
+
+	default:
+		return UnsupportedKindError(kind)
 	}
 }
 
