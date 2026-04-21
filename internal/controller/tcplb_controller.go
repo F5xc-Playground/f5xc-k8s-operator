@@ -53,6 +53,14 @@ func (r *TCPLoadBalancerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	xcNS := cr.Spec.XCNamespace
+
+	// Validate cross-XC-namespace references
+	for _, rp := range cr.Spec.OriginPools {
+		if err := validateOriginPoolXCNamespace(ctx, r.Client, "TCPLoadBalancer", cr.Name, xcNS, cr.Namespace, rp.Pool.Name); err != nil {
+			return r.handleXCError(ctx, log, &cr, err, "validate")
+		}
+	}
+
 	xc := r.ClientSet.Get()
 
 	current, err := xc.GetTCPLoadBalancer(ctx, xcNS, cr.Name)

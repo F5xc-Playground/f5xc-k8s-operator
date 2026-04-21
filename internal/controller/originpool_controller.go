@@ -83,6 +83,14 @@ func (r *OriginPoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	xcNS := cr.Spec.XCNamespace
+
+	// Validate cross-XC-namespace references
+	for _, hc := range cr.Spec.HealthChecks {
+		if err := validateHealthCheckXCNamespace(ctx, r.Client, "OriginPool", cr.Name, xcNS, cr.Namespace, hc.Name); err != nil {
+			return r.handleXCError(ctx, log, &cr, err, "validate")
+		}
+	}
+
 	xc := r.ClientSet.Get()
 
 	current, err := xc.GetOriginPool(ctx, xcNS, cr.Name)

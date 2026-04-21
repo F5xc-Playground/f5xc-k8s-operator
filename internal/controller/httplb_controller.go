@@ -53,6 +53,19 @@ func (r *HTTPLoadBalancerReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	xcNS := cr.Spec.XCNamespace
+
+	// Validate cross-XC-namespace references
+	for _, rp := range cr.Spec.DefaultRoutePools {
+		if err := validateOriginPoolXCNamespace(ctx, r.Client, "HTTPLoadBalancer", cr.Name, xcNS, cr.Namespace, rp.Pool.Name); err != nil {
+			return r.handleXCError(ctx, log, &cr, err, "validate")
+		}
+	}
+	if cr.Spec.AppFirewall != nil {
+		if err := validateAppFirewallXCNamespace(ctx, r.Client, "HTTPLoadBalancer", cr.Name, xcNS, cr.Namespace, cr.Spec.AppFirewall.Name); err != nil {
+			return r.handleXCError(ctx, log, &cr, err, "validate")
+		}
+	}
+
 	xc := r.ClientSet.Get()
 
 	current, err := xc.GetHTTPLoadBalancer(ctx, xcNS, cr.Name)
