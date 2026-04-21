@@ -40,7 +40,7 @@ spec:
 
 ### Reference from an HTTPLoadBalancer
 
-Rate limiters are referenced from HTTPLoadBalancers using the `rateLimit` OneOf field. The exact structure depends on your XC configuration -- see the [HTTP Load Balancer API docs](https://docs.cloud.f5.com/docs-v2/api/views-http-loadbalancer) for details.
+Rate limiters are referenced from HTTPLoadBalancers using the `rateLimit` OneOf field. The exact structure depends on your XC configuration. See the [HTTP Load Balancer API docs](https://docs.cloud.f5.com/docs-v2/api/views-http-loadbalancer) for details.
 
 ## Spec Reference
 

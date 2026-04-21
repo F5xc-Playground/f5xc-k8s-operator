@@ -123,7 +123,7 @@ These are JSON objects passed through to the XC API. See the [API reference](htt
 
 ### Additional OneOf Groups
 
-Each group is mutually exclusive -- set at most one field per group. All accept JSON objects; refer to the [XC API docs](https://docs.cloud.f5.com/docs-v2/api/views-http-loadbalancer) for the structure.
+Each group is mutually exclusive. Set at most one field per group. All accept JSON objects; refer to the [XC API docs](https://docs.cloud.f5.com/docs-v2/api/views-http-loadbalancer) for the structure.
 
 | Group | Options |
 |-------|---------|
