@@ -123,6 +123,60 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err := (&controller.HTTPLoadBalancerReconciler{
+		Client:    mgr.GetClient(),
+		Log:       ctrl.Log.WithName("controllers").WithName("HTTPLoadBalancer"),
+		ClientSet: cs,
+	}).SetupWithManager(mgr); err != nil {
+		log.Error(err, "unable to create controller", "controller", "HTTPLoadBalancer")
+		os.Exit(1)
+	}
+
+	if err := (&controller.TCPLoadBalancerReconciler{
+		Client:    mgr.GetClient(),
+		Log:       ctrl.Log.WithName("controllers").WithName("TCPLoadBalancer"),
+		ClientSet: cs,
+	}).SetupWithManager(mgr); err != nil {
+		log.Error(err, "unable to create controller", "controller", "TCPLoadBalancer")
+		os.Exit(1)
+	}
+
+	if err := (&controller.AppFirewallReconciler{
+		Client:    mgr.GetClient(),
+		Log:       ctrl.Log.WithName("controllers").WithName("AppFirewall"),
+		ClientSet: cs,
+	}).SetupWithManager(mgr); err != nil {
+		log.Error(err, "unable to create controller", "controller", "AppFirewall")
+		os.Exit(1)
+	}
+
+	if err := (&controller.HealthCheckReconciler{
+		Client:    mgr.GetClient(),
+		Log:       ctrl.Log.WithName("controllers").WithName("HealthCheck"),
+		ClientSet: cs,
+	}).SetupWithManager(mgr); err != nil {
+		log.Error(err, "unable to create controller", "controller", "HealthCheck")
+		os.Exit(1)
+	}
+
+	if err := (&controller.ServicePolicyReconciler{
+		Client:    mgr.GetClient(),
+		Log:       ctrl.Log.WithName("controllers").WithName("ServicePolicy"),
+		ClientSet: cs,
+	}).SetupWithManager(mgr); err != nil {
+		log.Error(err, "unable to create controller", "controller", "ServicePolicy")
+		os.Exit(1)
+	}
+
+	if err := (&controller.RateLimiterReconciler{
+		Client:    mgr.GetClient(),
+		Log:       ctrl.Log.WithName("controllers").WithName("RateLimiter"),
+		ClientSet: cs,
+	}).SetupWithManager(mgr); err != nil {
+		log.Error(err, "unable to create controller", "controller", "RateLimiter")
+		os.Exit(1)
+	}
+
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		log.Error(err, "unable to set up health check")
 		os.Exit(1)
