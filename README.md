@@ -70,5 +70,5 @@ kubectl get op my-pool
 
 - [Helm Values and Configuration](docs/overview.md)
 - [Development Guide](docs/development.md)
-- Resource guides: see the links in the [Resources](#resources) table above
+- [Resource Guides](docs/resources/)
 - [F5 XC API Reference](https://docs.cloud.f5.com/docs-v2/api)
