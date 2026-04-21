@@ -12,6 +12,7 @@ import (
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
+// ServicePolicy is the Schema for the servicepolicies API.
 type ServicePolicy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -22,6 +23,7 @@ type ServicePolicy struct {
 
 // +kubebuilder:object:root=true
 
+// ServicePolicyList contains a list of ServicePolicy.
 type ServicePolicyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

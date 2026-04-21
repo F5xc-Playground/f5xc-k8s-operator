@@ -42,6 +42,7 @@ func mapHTTPLoadBalancerSpec(spec *v1alpha1.HTTPLoadBalancerSpec) xcclient.HTTPL
 	}
 
 	if len(spec.Routes) > 0 {
+		// Elements are apiextensionsv1.JSON (already validated); marshal cannot fail.
 		routesJSON, _ := json.Marshal(spec.Routes)
 		out.Routes = routesJSON
 	}

@@ -11,6 +11,7 @@ import (
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
+// RateLimiter is the Schema for the ratelimiters API.
 type RateLimiter struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -21,6 +22,7 @@ type RateLimiter struct {
 
 // +kubebuilder:object:root=true
 
+// RateLimiterList contains a list of RateLimiter.
 type RateLimiterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

@@ -11,6 +11,7 @@ import (
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
+// HealthCheck is the Schema for the healthchecks API.
 type HealthCheck struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -21,6 +22,7 @@ type HealthCheck struct {
 
 // +kubebuilder:object:root=true
 
+// HealthCheckList contains a list of HealthCheck.
 type HealthCheckList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

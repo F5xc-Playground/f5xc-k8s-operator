@@ -12,6 +12,7 @@ import (
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
+// AppFirewall is the Schema for the appfirewalls API.
 type AppFirewall struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -22,6 +23,7 @@ type AppFirewall struct {
 
 // +kubebuilder:object:root=true
 
+// AppFirewallList contains a list of AppFirewall.
 type AppFirewallList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
