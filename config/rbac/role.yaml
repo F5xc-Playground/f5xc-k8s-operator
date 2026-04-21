@@ -20,6 +20,7 @@ rules:
   - originpools
   - ratelimiters
   - servicepolicies
+  - tcploadbalancers
   verbs:
   - create
   - delete
@@ -36,6 +37,7 @@ rules:
   - originpools/finalizers
   - ratelimiters/finalizers
   - servicepolicies/finalizers
+  - tcploadbalancers/finalizers
   verbs:
   - update
 - apiGroups:
@@ -46,6 +48,7 @@ rules:
   - originpools/status
   - ratelimiters/status
   - servicepolicies/status
+  - tcploadbalancers/status
   verbs:
   - get
   - patch
