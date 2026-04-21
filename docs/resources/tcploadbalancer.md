@@ -51,6 +51,10 @@ spec:
 
 ## Spec Reference
 
+> **Full field reference:** [TCP Load Balancer API Documentation](https://docs.cloud.f5.com/docs-v2/api/views-tcp-loadbalancer)
+>
+> Fields marked as "object" below are JSON objects passed through to the XC API. The API docs describe all available sub-fields and OneOf options.
+
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `xcNamespace` | string | Yes | F5 XC namespace |
@@ -75,4 +79,4 @@ spec:
 | `advertiseCustom` | Custom advertisement config |
 | `doNotAdvertise` | `{}` to not advertise |
 
-All OneOf fields accept JSON objects passed through to the XC API. See the [API reference](https://docs.cloud.f5.com/docs-v2/api/views-tcp-loadbalancer) for available sub-fields.
+All OneOf fields accept JSON objects passed through to the XC API.

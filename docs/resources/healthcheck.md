@@ -75,6 +75,8 @@ spec:
 
 ## Spec Reference
 
+> **Full field reference:** [Health Check API Documentation](https://docs.cloud.f5.com/docs-v2/api/healthcheck)
+
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `xcNamespace` | string | Yes | F5 XC namespace |

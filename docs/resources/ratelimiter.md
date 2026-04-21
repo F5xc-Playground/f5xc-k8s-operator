@@ -44,6 +44,8 @@ Rate limiters are referenced from HTTPLoadBalancers using the `rateLimit` OneOf 
 
 ## Spec Reference
 
+> **Full field reference:** [Rate Limiter API Documentation](https://docs.cloud.f5.com/docs-v2/api/rate-limiter)
+
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `xcNamespace` | string | Yes | F5 XC namespace |

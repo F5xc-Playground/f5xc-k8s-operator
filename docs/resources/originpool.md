@@ -115,6 +115,10 @@ spec:
 
 ## Spec Reference
 
+> **Full field reference:** [Origin Pool API Documentation](https://docs.cloud.f5.com/docs-v2/api/views-origin-pool)
+>
+> Fields marked as "object" below are JSON objects passed through to the XC API. The API docs describe all available sub-fields.
+
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `xcNamespace` | string | Yes | F5 XC namespace |
@@ -122,7 +126,7 @@ spec:
 | `originServers` | list | Yes | List of origin server definitions (see below) |
 | `loadBalancerAlgorithm` | string | No | Algorithm: `ROUND_ROBIN`, `LEAST_ACTIVE`, `RANDOM`, etc. |
 | `healthChecks` | list of ObjectRef | No | References to HealthCheck CRs |
-| `useTLS` | object | No | TLS config (OneOf with `noTLS`). See [XC API docs](https://docs.cloud.f5.com/docs-v2/api/views-origin-pool). |
+| `useTLS` | object | No | TLS config (OneOf with `noTLS`) |
 | `noTLS` | object | No | Explicit no-TLS (OneOf with `useTLS`) |
 
 ### Origin Server Types

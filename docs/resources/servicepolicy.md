@@ -85,6 +85,10 @@ spec:
 
 ## Spec Reference
 
+> **Full field reference:** [Service Policy API Documentation](https://docs.cloud.f5.com/docs-v2/api/service-policy)
+>
+> Fields marked as "object" below are JSON objects passed through to the XC API. The API docs describe all available sub-fields, rule schemas, and match conditions.
+
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `xcNamespace` | string | Yes | F5 XC namespace |
@@ -111,4 +115,4 @@ Controls which servers this policy applies to.
 | `serverNameMatcher` | Match server names by pattern |
 | `serverSelector` | Match servers by label selector |
 
-All OneOf fields accept JSON objects passed through to the XC API. See the [API reference](https://docs.cloud.f5.com/docs-v2/api/service-policy) for the full rule schema.
+All OneOf fields accept JSON objects passed through to the XC API.

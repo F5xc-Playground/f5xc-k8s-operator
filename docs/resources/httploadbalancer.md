@@ -77,6 +77,10 @@ spec:
 
 ## Spec Reference
 
+> **Full field reference:** [HTTP Load Balancer API Documentation](https://docs.cloud.f5.com/docs-v2/api/views-http-loadbalancer)
+>
+> Fields marked as "object" below are JSON objects passed through to the XC API. The API docs describe all available sub-fields and OneOf options.
+
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `xcNamespace` | string | Yes | F5 XC namespace |
@@ -103,7 +107,7 @@ defaultRoutePools:
 | `https` | HTTPS with explicit TLS certificate configuration. |
 | `httpsAutoCert` | HTTPS with automatic certificate from F5 XC. |
 
-These are JSON objects passed through to the XC API. See the [API reference](https://docs.cloud.f5.com/docs-v2/api/views-http-loadbalancer) for available sub-fields.
+These are JSON objects passed through to the XC API.
 
 ### WAF (choose one)
 
@@ -123,7 +127,7 @@ These are JSON objects passed through to the XC API. See the [API reference](htt
 
 ### Additional OneOf Groups
 
-Each group is mutually exclusive. Set at most one field per group. All accept JSON objects; refer to the [XC API docs](https://docs.cloud.f5.com/docs-v2/api/views-http-loadbalancer) for the structure.
+Each group is mutually exclusive. Set at most one field per group.
 
 | Group | Options |
 |-------|---------|
