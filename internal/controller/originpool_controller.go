@@ -13,9 +13,12 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
@@ -365,8 +368,101 @@ func (r *OriginPoolReconciler) resolveResource(ctx context.Context, kind, ns, na
 	}
 }
 
+const discoverIndexKey = "spec.originServers.discover"
+
+func discoverIndexFunc(obj client.Object) []string {
+	cr, ok := obj.(*v1alpha1.OriginPool)
+	if !ok {
+		return nil
+	}
+	var refs []string
+	for _, os := range cr.Spec.OriginServers {
+		if os.Discover != nil {
+			ref := os.Discover.Resource
+			ns := ref.Namespace
+			if ns == "" {
+				ns = cr.Namespace
+			}
+			refs = append(refs, fmt.Sprintf("%s/%s/%s", ref.Kind, ns, ref.Name))
+		}
+	}
+	return refs
+}
+
+func (r *OriginPoolReconciler) mapServiceToOriginPools(ctx context.Context, obj client.Object) []ctrl.Request {
+	return r.mapResourceToOriginPools(ctx, "Service", obj)
+}
+
+func (r *OriginPoolReconciler) mapIngressToOriginPools(ctx context.Context, obj client.Object) []ctrl.Request {
+	return r.mapResourceToOriginPools(ctx, "Ingress", obj)
+}
+
+func (r *OriginPoolReconciler) mapGatewayToOriginPools(ctx context.Context, obj client.Object) []ctrl.Request {
+	return r.mapResourceToOriginPools(ctx, "Gateway", obj)
+}
+
+func (r *OriginPoolReconciler) mapRouteToOriginPools(ctx context.Context, obj client.Object) []ctrl.Request {
+	return r.mapResourceToOriginPools(ctx, "Route", obj)
+}
+
+func (r *OriginPoolReconciler) mapNodeToOriginPools(ctx context.Context, obj client.Object) []ctrl.Request {
+	var pools v1alpha1.OriginPoolList
+	if err := r.List(ctx, &pools); err != nil {
+		return nil
+	}
+	var requests []ctrl.Request
+	seen := make(map[types.NamespacedName]bool)
+	for _, pool := range pools.Items {
+		for _, os := range pool.Spec.OriginServers {
+			if os.Discover != nil && os.Discover.Resource.Kind == "Service" {
+				key := types.NamespacedName{Name: pool.Name, Namespace: pool.Namespace}
+				if !seen[key] {
+					requests = append(requests, ctrl.Request{NamespacedName: key})
+					seen[key] = true
+				}
+			}
+		}
+	}
+	return requests
+}
+
+func (r *OriginPoolReconciler) mapResourceToOriginPools(ctx context.Context, kind string, obj client.Object) []ctrl.Request {
+	indexKey := fmt.Sprintf("%s/%s/%s", kind, obj.GetNamespace(), obj.GetName())
+	var pools v1alpha1.OriginPoolList
+	if err := r.List(ctx, &pools, client.MatchingFields{discoverIndexKey: indexKey}); err != nil {
+		return nil
+	}
+	requests := make([]ctrl.Request, len(pools.Items))
+	for i, pool := range pools.Items {
+		requests[i] = ctrl.Request{
+			NamespacedName: types.NamespacedName{Name: pool.Name, Namespace: pool.Namespace},
+		}
+	}
+	return requests
+}
+
+func crdInstalled(mgr ctrl.Manager, group, kind string) bool {
+	_, err := mgr.GetRESTMapper().RESTMapping(schema.GroupKind{Group: group, Kind: kind})
+	return err == nil
+}
+
 func (r *OriginPoolReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &v1alpha1.OriginPool{}, discoverIndexKey, discoverIndexFunc); err != nil {
+		return fmt.Errorf("indexing discover references: %w", err)
+	}
+
+	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.OriginPool{}).
-		Complete(r)
+		Watches(&corev1.Service{}, handler.EnqueueRequestsFromMapFunc(r.mapServiceToOriginPools)).
+		Watches(&corev1.Node{}, handler.EnqueueRequestsFromMapFunc(r.mapNodeToOriginPools)).
+		Watches(&networkingv1.Ingress{}, handler.EnqueueRequestsFromMapFunc(r.mapIngressToOriginPools))
+
+	if crdInstalled(mgr, "gateway.networking.k8s.io", "Gateway") {
+		builder = builder.Watches(&gatewayv1.Gateway{}, handler.EnqueueRequestsFromMapFunc(r.mapGatewayToOriginPools))
+	}
+	if crdInstalled(mgr, "route.openshift.io", "Route") {
+		builder = builder.Watches(&routev1.Route{}, handler.EnqueueRequestsFromMapFunc(r.mapRouteToOriginPools))
+	}
+
+	return builder.Complete(r)
 }
