@@ -15,7 +15,8 @@ import (
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
 )
 
-func boolPtr(b bool) *bool { return &b }
+func boolPtr(b bool) *bool   { return &b }
+func uint32Ptr(v uint32) *uint32 { return &v }
 
 var (
 	testEnv    *envtest.Environment

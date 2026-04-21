@@ -10,8 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func uint32Ptr(v uint32) *uint32 { return &v }
-
 func TestBuildRateLimiterCreate_BasicFields(t *testing.T) {
 	cr := &v1alpha1.RateLimiter{
 		ObjectMeta: metav1.ObjectMeta{Name: "my-rl", Namespace: "default"},
