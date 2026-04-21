@@ -6,7 +6,6 @@ import (
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestResolveService_LoadBalancerWithIP(t *testing.T) {
@@ -253,5 +252,3 @@ func TestResolveDiscover_AddressOverrideIP(t *testing.T) {
 	assert.Equal(t, v1alpha1.AddressTypeIP, result.AddressType)
 }
 
-// suppress unused import warning — metav1 is used implicitly via corev1 types
-var _ = metav1.Now
