@@ -3,5 +3,6 @@ kind: RateLimiter
 metadata:
   name: example-ratelimiter
 spec:
+  xcNamespace: default
   threshold: 100
   unit: "MINUTE"

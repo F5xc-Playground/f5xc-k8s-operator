@@ -37,8 +37,37 @@ func mapServicePolicySpec(spec *v1alpha1.ServicePolicySpec) xcclient.ServicePoli
 	out := xcclient.ServicePolicySpec{
 		Algo: spec.Algo,
 	}
-	for _, rule := range spec.Rules {
-		out.Rules = append(out.Rules, json.RawMessage(rule.Raw))
+
+	// Rule choice OneOf
+	if spec.AllowAllRequests != nil {
+		out.AllowAllRequests = json.RawMessage(spec.AllowAllRequests.Raw)
 	}
+	if spec.AllowList != nil {
+		out.AllowList = json.RawMessage(spec.AllowList.Raw)
+	}
+	if spec.DenyAllRequests != nil {
+		out.DenyAllRequests = json.RawMessage(spec.DenyAllRequests.Raw)
+	}
+	if spec.DenyList != nil {
+		out.DenyList = json.RawMessage(spec.DenyList.Raw)
+	}
+	if spec.RuleList != nil {
+		out.RuleList = json.RawMessage(spec.RuleList.Raw)
+	}
+
+	// Server choice OneOf
+	if spec.AnyServer != nil {
+		out.AnyServer = json.RawMessage(spec.AnyServer.Raw)
+	}
+	if spec.ServerName != nil {
+		out.ServerName = json.RawMessage(spec.ServerName.Raw)
+	}
+	if spec.ServerNameMatcher != nil {
+		out.ServerNameMatcher = json.RawMessage(spec.ServerNameMatcher.Raw)
+	}
+	if spec.ServerSelector != nil {
+		out.ServerSelector = json.RawMessage(spec.ServerSelector.Raw)
+	}
+
 	return out
 }

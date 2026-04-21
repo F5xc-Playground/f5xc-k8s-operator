@@ -8,8 +8,20 @@ import (
 
 // ServicePolicySpec is the resource-specific payload for an F5 XC service policy.
 type ServicePolicySpec struct {
-	Algo  string            `json:"algo,omitempty"`
-	Rules []json.RawMessage `json:"rules,omitempty"`
+	Algo string `json:"algo,omitempty"`
+
+	// Rule choice OneOf: allow_all_requests, allow_list, deny_all_requests, deny_list, rule_list
+	AllowAllRequests json.RawMessage `json:"allow_all_requests,omitempty"`
+	AllowList        json.RawMessage `json:"allow_list,omitempty"`
+	DenyAllRequests  json.RawMessage `json:"deny_all_requests,omitempty"`
+	DenyList         json.RawMessage `json:"deny_list,omitempty"`
+	RuleList         json.RawMessage `json:"rule_list,omitempty"`
+
+	// Server choice OneOf: any_server, server_name, server_name_matcher, server_selector
+	AnyServer         json.RawMessage `json:"any_server,omitempty"`
+	ServerName        json.RawMessage `json:"server_name,omitempty"`
+	ServerNameMatcher json.RawMessage `json:"server_name_matcher,omitempty"`
+	ServerSelector    json.RawMessage `json:"server_selector,omitempty"`
 }
 
 // ServicePolicyCreate is the request body for creating a new service policy.

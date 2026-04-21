@@ -3,5 +3,6 @@ kind: HealthCheck
 metadata:
   name: example-healthcheck
 spec:
+  xcNamespace: default
   httpHealthCheck:
     path: "/healthz"

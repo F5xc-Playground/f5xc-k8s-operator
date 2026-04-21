@@ -3,6 +3,7 @@ kind: TCPLoadBalancer
 metadata:
   name: example-tcplb
 spec:
+  xcNamespace: default
   domains:
     - "tcp.example.com"
   listenPort: 443

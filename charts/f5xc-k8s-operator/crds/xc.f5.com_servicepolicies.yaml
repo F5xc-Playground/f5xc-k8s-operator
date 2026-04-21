@@ -52,10 +52,28 @@ spec:
             properties:
               algo:
                 type: string
-              rules:
-                items:
-                  x-kubernetes-preserve-unknown-fields: true
-                type: array
+              allowAllRequests:
+                description: 'Rule choice OneOf: allowAllRequests, allowList, denyAllRequests,
+                  denyList, ruleList'
+                x-kubernetes-preserve-unknown-fields: true
+              allowList:
+                x-kubernetes-preserve-unknown-fields: true
+              anyServer:
+                description: 'Server choice OneOf: anyServer, serverName, serverNameMatcher,
+                  serverSelector'
+                x-kubernetes-preserve-unknown-fields: true
+              denyAllRequests:
+                x-kubernetes-preserve-unknown-fields: true
+              denyList:
+                x-kubernetes-preserve-unknown-fields: true
+              ruleList:
+                x-kubernetes-preserve-unknown-fields: true
+              serverName:
+                x-kubernetes-preserve-unknown-fields: true
+              serverNameMatcher:
+                x-kubernetes-preserve-unknown-fields: true
+              serverSelector:
+                x-kubernetes-preserve-unknown-fields: true
               xcNamespace:
                 type: string
             required:

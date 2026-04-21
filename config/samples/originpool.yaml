@@ -3,6 +3,7 @@ kind: OriginPool
 metadata:
   name: example-origin-pool
 spec:
+  xcNamespace: default
   originServers:
     - publicIP:
         ip: "203.0.113.10"

@@ -3,4 +3,7 @@ kind: ServicePolicy
 metadata:
   name: example-servicepolicy
 spec:
+  xcNamespace: default
   algo: "FIRST_MATCH"
+  allowAllRequests: {}
+  anyServer: {}

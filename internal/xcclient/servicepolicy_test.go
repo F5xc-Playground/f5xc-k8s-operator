@@ -15,8 +15,9 @@ func sampleServicePolicyCreate(name, ns string) *ServicePolicyCreate {
 	return &ServicePolicyCreate{
 		Metadata: ObjectMeta{Name: name, Namespace: ns},
 		Spec: ServicePolicySpec{
-			Algo:  "DENY_LIST",
-			Rules: []json.RawMessage{json.RawMessage(`{"metadata":{"name":"rule-1"}}`)},
+			Algo:             "FIRST_MATCH",
+			AllowAllRequests: json.RawMessage(`{}`),
+			AnyServer:        json.RawMessage(`{}`),
 		},
 	}
 }

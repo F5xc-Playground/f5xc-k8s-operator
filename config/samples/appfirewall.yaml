@@ -3,4 +3,5 @@ kind: AppFirewall
 metadata:
   name: example-appfirewall
 spec:
+  xcNamespace: default
   blocking: {}

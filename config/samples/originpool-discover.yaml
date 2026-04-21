@@ -3,6 +3,7 @@ kind: OriginPool
 metadata:
   name: example-discover-pool
 spec:
+  xcNamespace: default
   port: 443
   originServers:
     - discover:

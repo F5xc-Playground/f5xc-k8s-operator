@@ -3,8 +3,11 @@ kind: HTTPLoadBalancer
 metadata:
   name: example-httplb
 spec:
+  xcNamespace: default
   domains:
     - "app.example.com"
+  http:
+    dns_volterra_managed: true
   defaultRoutePools:
     - pool:
         name: example-pool

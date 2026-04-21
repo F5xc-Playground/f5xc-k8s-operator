@@ -262,8 +262,10 @@ func TestContract_ServicePolicyCRDLifecycle(t *testing.T) {
 			Namespace: "contract-sp",
 		},
 		Spec: v1alpha1.ServicePolicySpec{
-			XCNamespace: xcNS,
-			Algo:        "FIRST_MATCH",
+			XCNamespace:      xcNS,
+			Algo:             "FIRST_MATCH",
+			AllowAllRequests: &apiextensionsv1.JSON{Raw: []byte("{}")},
+			AnyServer:        &apiextensionsv1.JSON{Raw: []byte("{}")},
 		},
 	}
 	require.NoError(t, testClient.Create(testCtx, cr))
@@ -448,6 +450,7 @@ func TestContract_HTTPLoadBalancerCRDLifecycle(t *testing.T) {
 		Spec: v1alpha1.HTTPLoadBalancerSpec{
 			XCNamespace: xcNS,
 			Domains:     []string{"http.test.com"},
+			HTTP:        &apiextensionsv1.JSON{Raw: []byte(`{"dns_volterra_managed":true}`)},
 			DefaultRoutePools: []v1alpha1.RoutePool{
 				{Pool: v1alpha1.ObjectRef{Name: "test-pool"}, Weight: uint32Ptr(1)},
 			},
