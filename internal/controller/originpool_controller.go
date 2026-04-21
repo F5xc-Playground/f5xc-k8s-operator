@@ -68,7 +68,7 @@ func (r *OriginPoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 }
 
 func (r *OriginPoolReconciler) handleCreate(ctx context.Context, log logr.Logger, cr *v1alpha1.OriginPool, xc xcclient.XCClient, xcNS string) (ctrl.Result, error) {
-	create := buildOriginPoolCreate(cr, xcNS)
+	create := buildOriginPoolCreate(cr, xcNS, nil)
 	result, err := xc.CreateOriginPool(ctx, xcNS, create)
 	if err != nil {
 		return r.handleXCError(ctx, log, cr, err, "create")
@@ -83,7 +83,7 @@ func (r *OriginPoolReconciler) handleCreate(ctx context.Context, log logr.Logger
 }
 
 func (r *OriginPoolReconciler) handleUpdate(ctx context.Context, log logr.Logger, cr *v1alpha1.OriginPool, xc xcclient.XCClient, xcNS string, current *xcclient.OriginPool) (ctrl.Result, error) {
-	desiredJSON, err := buildOriginPoolDesiredSpecJSON(cr, xcNS)
+	desiredJSON, err := buildOriginPoolDesiredSpecJSON(cr, xcNS, nil)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("building desired spec JSON: %w", err)
 	}
@@ -101,7 +101,7 @@ func (r *OriginPoolReconciler) handleUpdate(ctx context.Context, log logr.Logger
 		return ctrl.Result{}, nil
 	}
 
-	replace := buildOriginPoolReplace(cr, xcNS, current.Metadata.ResourceVersion)
+	replace := buildOriginPoolReplace(cr, xcNS, current.Metadata.ResourceVersion, nil)
 	result, err := xc.ReplaceOriginPool(ctx, xcNS, cr.Name, replace)
 	if err != nil {
 		return r.handleXCError(ctx, log, cr, err, "update")

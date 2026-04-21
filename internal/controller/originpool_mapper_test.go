@@ -26,7 +26,7 @@ func TestBuildOriginPoolCreate_BasicFields(t *testing.T) {
 		},
 	}
 
-	result := buildOriginPoolCreate(cr, "default")
+	result := buildOriginPoolCreate(cr, "default", nil)
 	assert.Equal(t, "my-pool", result.Metadata.Name)
 	assert.Equal(t, "default", result.Metadata.Namespace)
 	assert.Equal(t, 443, result.Spec.Port)
@@ -51,7 +51,7 @@ func TestBuildOriginPoolCreate_AllOriginServerTypes(t *testing.T) {
 		},
 	}
 
-	result := buildOriginPoolCreate(cr, "ns")
+	result := buildOriginPoolCreate(cr, "ns", nil)
 	require.Len(t, result.Spec.OriginServers, 6)
 
 	assert.Equal(t, "1.1.1.1", result.Spec.OriginServers[0].PublicIP.IP)
@@ -78,7 +78,7 @@ func TestBuildOriginPoolCreate_HealthChecks(t *testing.T) {
 		},
 	}
 
-	result := buildOriginPoolCreate(cr, "ns")
+	result := buildOriginPoolCreate(cr, "ns", nil)
 	require.Len(t, result.Spec.HealthCheck, 1)
 	assert.Equal(t, "hc1", result.Spec.HealthCheck[0].Name)
 	assert.Equal(t, "ns", result.Spec.HealthCheck[0].Namespace)
@@ -97,7 +97,7 @@ func TestBuildOriginPoolCreate_TLSPassthrough(t *testing.T) {
 		},
 	}
 
-	result := buildOriginPoolCreate(cr, "ns")
+	result := buildOriginPoolCreate(cr, "ns", nil)
 	assert.JSONEq(t, `{"tls_config":{"default_security":{}}}`, string(result.Spec.UseTLS))
 }
 
@@ -112,7 +112,7 @@ func TestBuildOriginPoolReplace_IncludesResourceVersion(t *testing.T) {
 		},
 	}
 
-	result := buildOriginPoolReplace(cr, "ns", "rv-123")
+	result := buildOriginPoolReplace(cr, "ns", "rv-123", nil)
 	assert.Equal(t, "my-pool", result.Metadata.Name)
 	assert.Equal(t, "ns", result.Metadata.Namespace)
 	assert.Equal(t, "rv-123", result.Metadata.ResourceVersion)
@@ -130,7 +130,7 @@ func TestBuildOriginPoolCreate_XCNamespaceOverride(t *testing.T) {
 		},
 	}
 
-	result := buildOriginPoolCreate(cr, "xc-override-ns")
+	result := buildOriginPoolCreate(cr, "xc-override-ns", nil)
 	assert.Equal(t, "xc-override-ns", result.Metadata.Namespace)
 }
 
@@ -145,7 +145,7 @@ func TestBuildDesiredSpecJSON(t *testing.T) {
 		},
 	}
 
-	raw, err := buildOriginPoolDesiredSpecJSON(cr, "ns")
+	raw, err := buildOriginPoolDesiredSpecJSON(cr, "ns", nil)
 	require.NoError(t, err)
 
 	// buildOriginPoolDesiredSpecJSON returns the spec JSON only (same format as
@@ -159,4 +159,58 @@ func TestBuildDesiredSpecJSON(t *testing.T) {
 	assert.True(t, hasPort)
 	_, hasMetadata := spec["metadata"]
 	assert.False(t, hasMetadata, "spec JSON must not contain metadata")
+}
+
+func TestBuildOriginPoolCreate_WithResolvedDiscoverOrigins(t *testing.T) {
+	cr := &v1alpha1.OriginPool{
+		ObjectMeta: metav1.ObjectMeta{Name: "discover-pool", Namespace: "ns"},
+		Spec: v1alpha1.OriginPoolSpec{
+			OriginServers: []v1alpha1.OriginServer{
+				{PublicIP: &v1alpha1.PublicIP{IP: "1.2.3.4"}},
+				{Discover: &v1alpha1.OriginServerDiscover{
+					Resource: v1alpha1.ResourceRef{Kind: "Service", Name: "my-svc"},
+				}},
+				{Discover: &v1alpha1.OriginServerDiscover{
+					Resource: v1alpha1.ResourceRef{Kind: "Ingress", Name: "my-ing"},
+				}},
+			},
+			Port: 443,
+		},
+	}
+
+	resolved := []*ResolvedOrigin{
+		nil, // static origin — no resolution
+		{Address: "203.0.113.50", Port: 443, AddressType: v1alpha1.AddressTypeIP},
+		{Address: "ingress.example.com", Port: 443, AddressType: v1alpha1.AddressTypeFQDN},
+	}
+
+	result := buildOriginPoolCreate(cr, "ns", resolved)
+	require.Len(t, result.Spec.OriginServers, 3)
+
+	// First: static PublicIP unchanged
+	assert.Equal(t, "1.2.3.4", result.Spec.OriginServers[0].PublicIP.IP)
+
+	// Second: resolved IP → PublicIP
+	assert.NotNil(t, result.Spec.OriginServers[1].PublicIP)
+	assert.Equal(t, "203.0.113.50", result.Spec.OriginServers[1].PublicIP.IP)
+
+	// Third: resolved FQDN → PublicName
+	assert.NotNil(t, result.Spec.OriginServers[2].PublicName)
+	assert.Equal(t, "ingress.example.com", result.Spec.OriginServers[2].PublicName.DNSName)
+}
+
+func TestBuildOriginPoolCreate_NilResolvedBackwardsCompatible(t *testing.T) {
+	cr := &v1alpha1.OriginPool{
+		ObjectMeta: metav1.ObjectMeta{Name: "static-pool", Namespace: "ns"},
+		Spec: v1alpha1.OriginPoolSpec{
+			OriginServers: []v1alpha1.OriginServer{
+				{PublicIP: &v1alpha1.PublicIP{IP: "1.2.3.4"}},
+			},
+			Port: 443,
+		},
+	}
+
+	result := buildOriginPoolCreate(cr, "ns", nil)
+	require.Len(t, result.Spec.OriginServers, 1)
+	assert.Equal(t, "1.2.3.4", result.Spec.OriginServers[0].PublicIP.IP)
 }

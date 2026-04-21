@@ -7,40 +7,44 @@ import (
 	"github.com/kreynolds/f5xc-k8s-operator/internal/xcclient"
 )
 
-func buildOriginPoolCreate(cr *v1alpha1.OriginPool, xcNamespace string) *xcclient.OriginPoolCreate {
+func buildOriginPoolCreate(cr *v1alpha1.OriginPool, xcNamespace string, resolved []*ResolvedOrigin) *xcclient.OriginPoolCreate {
 	return &xcclient.OriginPoolCreate{
 		Metadata: xcclient.ObjectMeta{
 			Name:      cr.Name,
 			Namespace: xcNamespace,
 		},
-		Spec: mapOriginPoolSpec(&cr.Spec),
+		Spec: mapOriginPoolSpec(&cr.Spec, resolved),
 	}
 }
 
-func buildOriginPoolReplace(cr *v1alpha1.OriginPool, xcNamespace, resourceVersion string) *xcclient.OriginPoolReplace {
+func buildOriginPoolReplace(cr *v1alpha1.OriginPool, xcNamespace, resourceVersion string, resolved []*ResolvedOrigin) *xcclient.OriginPoolReplace {
 	return &xcclient.OriginPoolReplace{
 		Metadata: xcclient.ObjectMeta{
 			Name:            cr.Name,
 			Namespace:       xcNamespace,
 			ResourceVersion: resourceVersion,
 		},
-		Spec: mapOriginPoolSpec(&cr.Spec),
+		Spec: mapOriginPoolSpec(&cr.Spec, resolved),
 	}
 }
 
-func buildOriginPoolDesiredSpecJSON(cr *v1alpha1.OriginPool, xcNamespace string) (json.RawMessage, error) {
-	create := buildOriginPoolCreate(cr, xcNamespace)
+func buildOriginPoolDesiredSpecJSON(cr *v1alpha1.OriginPool, xcNamespace string, resolved []*ResolvedOrigin) (json.RawMessage, error) {
+	create := buildOriginPoolCreate(cr, xcNamespace, resolved)
 	return json.Marshal(create.Spec)
 }
 
-func mapOriginPoolSpec(spec *v1alpha1.OriginPoolSpec) xcclient.OriginPoolSpec {
+func mapOriginPoolSpec(spec *v1alpha1.OriginPoolSpec, resolved []*ResolvedOrigin) xcclient.OriginPoolSpec {
 	out := xcclient.OriginPoolSpec{
 		Port:                  spec.Port,
 		LoadBalancerAlgorithm: spec.LoadBalancerAlgorithm,
 	}
 
-	for _, s := range spec.OriginServers {
-		out.OriginServers = append(out.OriginServers, mapOriginServer(&s))
+	for i, s := range spec.OriginServers {
+		if resolved != nil && i < len(resolved) && resolved[i] != nil {
+			out.OriginServers = append(out.OriginServers, mapResolvedOriginServer(resolved[i]))
+		} else {
+			out.OriginServers = append(out.OriginServers, mapOriginServer(&s))
+		}
 	}
 
 	for _, hc := range spec.HealthChecks {
@@ -54,6 +58,16 @@ func mapOriginPoolSpec(spec *v1alpha1.OriginPoolSpec) xcclient.OriginPoolSpec {
 		out.NoTLS = json.RawMessage(spec.NoTLS.Raw)
 	}
 
+	return out
+}
+
+func mapResolvedOriginServer(r *ResolvedOrigin) xcclient.OriginServer {
+	var out xcclient.OriginServer
+	if r.AddressType == v1alpha1.AddressTypeIP {
+		out.PublicIP = &xcclient.PublicIP{IP: r.Address}
+	} else {
+		out.PublicName = &xcclient.PublicName{DNSName: r.Address}
+	}
 	return out
 }
 
