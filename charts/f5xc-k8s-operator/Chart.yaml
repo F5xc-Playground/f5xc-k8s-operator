@@ -1,0 +1,6 @@
+apiVersion: v2
+name: f5xc-k8s-operator
+description: Kubernetes operator for F5 Distributed Cloud resources
+version: 0.1.0
+appVersion: "0.1.0"
+type: application

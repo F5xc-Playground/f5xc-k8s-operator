@@ -1,0 +1,22 @@
+image:
+  repository: f5xc-k8s-operator
+  tag: latest
+  pullPolicy: IfNotPresent
+
+tenantURL: ""
+
+credentials:
+  secretName: xc-credentials
+  apiToken: ""
+
+replicaCount: 1
+
+leaderElection: false
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi

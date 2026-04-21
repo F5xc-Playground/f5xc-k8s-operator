@@ -1,0 +1,29 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-manager
+  labels:
+    app.kubernetes.io/name: f5xc-k8s-operator
+    app.kubernetes.io/instance: {{ .Release.Name }}
+rules:
+- apiGroups: [""]
+  resources: [nodes, secrets, services]
+  verbs: [get, list, watch]
+- apiGroups: [gateway.networking.k8s.io]
+  resources: [gateways]
+  verbs: [get, list, watch]
+- apiGroups: [networking.k8s.io]
+  resources: [ingresses]
+  verbs: [get, list, watch]
+- apiGroups: [route.openshift.io]
+  resources: [routes]
+  verbs: [get, list, watch]
+- apiGroups: [xc.f5.com]
+  resources: [appfirewalls, healthchecks, httploadbalancers, originpools, ratelimiters, servicepolicies, tcploadbalancers]
+  verbs: [create, delete, get, list, patch, update, watch]
+- apiGroups: [xc.f5.com]
+  resources: [appfirewalls/finalizers, healthchecks/finalizers, httploadbalancers/finalizers, originpools/finalizers, ratelimiters/finalizers, servicepolicies/finalizers, tcploadbalancers/finalizers]
+  verbs: [update]
+- apiGroups: [xc.f5.com]
+  resources: [appfirewalls/status, healthchecks/status, httploadbalancers/status, originpools/status, ratelimiters/status, servicepolicies/status, tcploadbalancers/status]
+  verbs: [get, patch, update]
