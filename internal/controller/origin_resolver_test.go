@@ -6,6 +6,7 @@ import (
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 )
 
 func TestResolveService_LoadBalancerWithIP(t *testing.T) {
@@ -252,3 +253,70 @@ func TestResolveDiscover_AddressOverrideIP(t *testing.T) {
 	assert.Equal(t, v1alpha1.AddressTypeIP, result.AddressType)
 }
 
+func TestResolveIngress_WithIP(t *testing.T) {
+	ing := &networkingv1.Ingress{
+		Status: networkingv1.IngressStatus{
+			LoadBalancer: networkingv1.IngressLoadBalancerStatus{
+				Ingress: []networkingv1.IngressLoadBalancerIngress{{IP: "203.0.113.10"}},
+			},
+		},
+	}
+
+	result := ResolveIngress(ing)
+	assert.False(t, result.Pending)
+	assert.Equal(t, "203.0.113.10", result.Address)
+	assert.Equal(t, uint32(80), result.Port)
+	assert.Equal(t, v1alpha1.AddressTypeIP, result.AddressType)
+}
+
+func TestResolveIngress_WithHostname(t *testing.T) {
+	ing := &networkingv1.Ingress{
+		Status: networkingv1.IngressStatus{
+			LoadBalancer: networkingv1.IngressLoadBalancerStatus{
+				Ingress: []networkingv1.IngressLoadBalancerIngress{{Hostname: "ingress.example.com"}},
+			},
+		},
+	}
+
+	result := ResolveIngress(ing)
+	assert.False(t, result.Pending)
+	assert.Equal(t, "ingress.example.com", result.Address)
+	assert.Equal(t, v1alpha1.AddressTypeFQDN, result.AddressType)
+}
+
+func TestResolveIngress_WithTLS(t *testing.T) {
+	ing := &networkingv1.Ingress{
+		Spec: networkingv1.IngressSpec{
+			TLS: []networkingv1.IngressTLS{{Hosts: []string{"example.com"}}},
+		},
+		Status: networkingv1.IngressStatus{
+			LoadBalancer: networkingv1.IngressLoadBalancerStatus{
+				Ingress: []networkingv1.IngressLoadBalancerIngress{{IP: "1.2.3.4"}},
+			},
+		},
+	}
+
+	result := ResolveIngress(ing)
+	assert.Equal(t, uint32(443), result.Port)
+}
+
+func TestResolveIngress_NoTLS(t *testing.T) {
+	ing := &networkingv1.Ingress{
+		Status: networkingv1.IngressStatus{
+			LoadBalancer: networkingv1.IngressLoadBalancerStatus{
+				Ingress: []networkingv1.IngressLoadBalancerIngress{{IP: "1.2.3.4"}},
+			},
+		},
+	}
+
+	result := ResolveIngress(ing)
+	assert.Equal(t, uint32(80), result.Port)
+}
+
+func TestResolveIngress_Pending(t *testing.T) {
+	ing := &networkingv1.Ingress{}
+
+	result := ResolveIngress(ing)
+	assert.True(t, result.Pending)
+	assert.Contains(t, result.Message, "no loadBalancer ingress")
+}

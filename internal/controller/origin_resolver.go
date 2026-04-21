@@ -6,6 +6,7 @@ import (
 
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 )
 
 type ResolvedOrigin struct {
@@ -116,6 +117,32 @@ func isNodeReady(node *corev1.Node) bool {
 		}
 	}
 	return false
+}
+
+func ResolveIngress(ing *networkingv1.Ingress) ResolvedOrigin {
+	if len(ing.Status.LoadBalancer.Ingress) == 0 {
+		return ResolvedOrigin{
+			Pending: true,
+			Message: "Ingress has no loadBalancer ingress assigned",
+		}
+	}
+
+	ingress := ing.Status.LoadBalancer.Ingress[0]
+	addr := ingress.IP
+	if addr == "" {
+		addr = ingress.Hostname
+	}
+
+	port := uint32(80)
+	if len(ing.Spec.TLS) > 0 {
+		port = 443
+	}
+
+	return ResolvedOrigin{
+		Address:     addr,
+		Port:        port,
+		AddressType: classifyAddress(addr),
+	}
 }
 
 func ResolveDiscover(discover *v1alpha1.OriginServerDiscover, resolved ResolvedOrigin) ResolvedOrigin {
