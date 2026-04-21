@@ -7,6 +7,7 @@ import (
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	routev1 "github.com/openshift/api/route/v1"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
@@ -182,6 +183,36 @@ func ResolveGateway(gw *gatewayv1.Gateway) ResolvedOrigin {
 		Address:     addr.Value,
 		Port:        port,
 		AddressType: addrType,
+	}
+}
+
+func ResolveRoute(route *routev1.Route) ResolvedOrigin {
+	if len(route.Status.Ingress) == 0 {
+		return ResolvedOrigin{
+			Pending: true,
+			Message: "Route has no ingress status",
+		}
+	}
+
+	for _, ri := range route.Status.Ingress {
+		for _, cond := range ri.Conditions {
+			if cond.Type == routev1.RouteAdmitted && cond.Status == corev1.ConditionTrue {
+				port := uint32(80)
+				if route.Spec.TLS != nil {
+					port = 443
+				}
+				return ResolvedOrigin{
+					Address:     ri.Host,
+					Port:        port,
+					AddressType: v1alpha1.AddressTypeFQDN,
+				}
+			}
+		}
+	}
+
+	return ResolvedOrigin{
+		Pending: true,
+		Message: "Route is not admitted",
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	routev1 "github.com/openshift/api/route/v1"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
@@ -389,4 +390,74 @@ func TestResolveGateway_NilAddressType(t *testing.T) {
 	assert.False(t, result.Pending)
 	assert.Equal(t, "1.2.3.4", result.Address)
 	assert.Equal(t, v1alpha1.AddressTypeIP, result.AddressType)
+}
+
+func TestResolveRoute_AdmittedWithTLS(t *testing.T) {
+	route := &routev1.Route{
+		Spec: routev1.RouteSpec{
+			TLS: &routev1.TLSConfig{Termination: routev1.TLSTerminationEdge},
+		},
+		Status: routev1.RouteStatus{
+			Ingress: []routev1.RouteIngress{
+				{
+					Host: "myapp.apps.example.com",
+					Conditions: []routev1.RouteIngressCondition{
+						{Type: routev1.RouteAdmitted, Status: corev1.ConditionTrue},
+					},
+				},
+			},
+		},
+	}
+
+	result := ResolveRoute(route)
+	assert.False(t, result.Pending)
+	assert.Equal(t, "myapp.apps.example.com", result.Address)
+	assert.Equal(t, uint32(443), result.Port)
+	assert.Equal(t, v1alpha1.AddressTypeFQDN, result.AddressType)
+}
+
+func TestResolveRoute_AdmittedNoTLS(t *testing.T) {
+	route := &routev1.Route{
+		Status: routev1.RouteStatus{
+			Ingress: []routev1.RouteIngress{
+				{
+					Host: "myapp.apps.example.com",
+					Conditions: []routev1.RouteIngressCondition{
+						{Type: routev1.RouteAdmitted, Status: corev1.ConditionTrue},
+					},
+				},
+			},
+		},
+	}
+
+	result := ResolveRoute(route)
+	assert.False(t, result.Pending)
+	assert.Equal(t, uint32(80), result.Port)
+}
+
+func TestResolveRoute_NotAdmitted(t *testing.T) {
+	route := &routev1.Route{
+		Status: routev1.RouteStatus{
+			Ingress: []routev1.RouteIngress{
+				{
+					Host: "myapp.apps.example.com",
+					Conditions: []routev1.RouteIngressCondition{
+						{Type: routev1.RouteAdmitted, Status: corev1.ConditionFalse},
+					},
+				},
+			},
+		},
+	}
+
+	result := ResolveRoute(route)
+	assert.True(t, result.Pending)
+	assert.Contains(t, result.Message, "not admitted")
+}
+
+func TestResolveRoute_NoIngress(t *testing.T) {
+	route := &routev1.Route{}
+
+	result := ResolveRoute(route)
+	assert.True(t, result.Pending)
+	assert.Contains(t, result.Message, "no ingress status")
 }
