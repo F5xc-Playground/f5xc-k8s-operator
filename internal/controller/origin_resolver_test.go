@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 func TestResolveService_LoadBalancerWithIP(t *testing.T) {
@@ -319,4 +320,73 @@ func TestResolveIngress_Pending(t *testing.T) {
 	result := ResolveIngress(ing)
 	assert.True(t, result.Pending)
 	assert.Contains(t, result.Message, "no loadBalancer ingress")
+}
+
+func TestResolveGateway_WithIPAddress(t *testing.T) {
+	addrType := gatewayv1.IPAddressType
+	gw := &gatewayv1.Gateway{
+		Spec: gatewayv1.GatewaySpec{
+			Listeners: []gatewayv1.Listener{{Name: "default", Port: 8443}},
+		},
+		Status: gatewayv1.GatewayStatus{
+			Addresses: []gatewayv1.GatewayStatusAddress{
+				{Type: &addrType, Value: "203.0.113.20"},
+			},
+		},
+	}
+
+	result := ResolveGateway(gw)
+	assert.False(t, result.Pending)
+	assert.Equal(t, "203.0.113.20", result.Address)
+	assert.Equal(t, uint32(8443), result.Port)
+	assert.Equal(t, v1alpha1.AddressTypeIP, result.AddressType)
+}
+
+func TestResolveGateway_WithHostname(t *testing.T) {
+	addrType := gatewayv1.HostnameAddressType
+	gw := &gatewayv1.Gateway{
+		Spec: gatewayv1.GatewaySpec{
+			Listeners: []gatewayv1.Listener{{Name: "default", Port: 443}},
+		},
+		Status: gatewayv1.GatewayStatus{
+			Addresses: []gatewayv1.GatewayStatusAddress{
+				{Type: &addrType, Value: "gateway.example.com"},
+			},
+		},
+	}
+
+	result := ResolveGateway(gw)
+	assert.False(t, result.Pending)
+	assert.Equal(t, "gateway.example.com", result.Address)
+	assert.Equal(t, v1alpha1.AddressTypeFQDN, result.AddressType)
+}
+
+func TestResolveGateway_Pending(t *testing.T) {
+	gw := &gatewayv1.Gateway{
+		Spec: gatewayv1.GatewaySpec{
+			Listeners: []gatewayv1.Listener{{Name: "default", Port: 443}},
+		},
+	}
+
+	result := ResolveGateway(gw)
+	assert.True(t, result.Pending)
+	assert.Contains(t, result.Message, "no addresses")
+}
+
+func TestResolveGateway_NilAddressType(t *testing.T) {
+	gw := &gatewayv1.Gateway{
+		Spec: gatewayv1.GatewaySpec{
+			Listeners: []gatewayv1.Listener{{Name: "default", Port: 443}},
+		},
+		Status: gatewayv1.GatewayStatus{
+			Addresses: []gatewayv1.GatewayStatusAddress{
+				{Value: "1.2.3.4"},
+			},
+		},
+	}
+
+	result := ResolveGateway(gw)
+	assert.False(t, result.Pending)
+	assert.Equal(t, "1.2.3.4", result.Address)
+	assert.Equal(t, v1alpha1.AddressTypeIP, result.AddressType)
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 type ResolvedOrigin struct {
@@ -154,6 +155,34 @@ func ResolveDiscover(discover *v1alpha1.OriginServerDiscover, resolved ResolvedO
 		resolved.Port = *discover.PortOverride
 	}
 	return resolved
+}
+
+func ResolveGateway(gw *gatewayv1.Gateway) ResolvedOrigin {
+	if len(gw.Status.Addresses) == 0 {
+		return ResolvedOrigin{
+			Pending: true,
+			Message: "Gateway has no addresses assigned",
+		}
+	}
+
+	addr := gw.Status.Addresses[0]
+	addrType := v1alpha1.AddressTypeIP
+	if addr.Type != nil && *addr.Type == gatewayv1.HostnameAddressType {
+		addrType = v1alpha1.AddressTypeFQDN
+	} else {
+		addrType = classifyAddress(addr.Value)
+	}
+
+	var port uint32
+	if len(gw.Spec.Listeners) > 0 {
+		port = uint32(gw.Spec.Listeners[0].Port)
+	}
+
+	return ResolvedOrigin{
+		Address:     addr.Value,
+		Port:        port,
+		AddressType: addrType,
+	}
 }
 
 func UnsupportedKindError(kind string) ResolvedOrigin {
