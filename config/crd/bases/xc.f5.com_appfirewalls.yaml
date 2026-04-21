@@ -83,6 +83,10 @@ spec:
               useLoadbalancerSetting:
                 description: Loadbalancer setting
                 x-kubernetes-preserve-unknown-fields: true
+              xcNamespace:
+                type: string
+            required:
+            - xcNamespace
             type: object
           status:
             properties:

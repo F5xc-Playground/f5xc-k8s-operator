@@ -56,6 +56,10 @@ spec:
                 items:
                   x-kubernetes-preserve-unknown-fields: true
                 type: array
+              xcNamespace:
+                type: string
+            required:
+            - xcNamespace
             type: object
           status:
             properties:

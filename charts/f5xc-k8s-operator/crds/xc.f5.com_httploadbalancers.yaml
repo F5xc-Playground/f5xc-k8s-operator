@@ -172,9 +172,12 @@ spec:
               userIDClientIP:
                 description: 'User ID OneOf: userIDClientIP'
                 x-kubernetes-preserve-unknown-fields: true
+              xcNamespace:
+                type: string
             required:
             - defaultRoutePools
             - domains
+            - xcNamespace
             type: object
           status:
             description: HTTPLoadBalancerStatus defines the observed state of HTTPLoadBalancer.

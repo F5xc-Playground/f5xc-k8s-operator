@@ -83,6 +83,10 @@ spec:
               unhealthyThreshold:
                 format: int32
                 type: integer
+              xcNamespace:
+                type: string
+            required:
+            - xcNamespace
             type: object
           status:
             properties:

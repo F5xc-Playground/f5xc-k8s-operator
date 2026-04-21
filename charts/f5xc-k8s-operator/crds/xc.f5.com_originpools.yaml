@@ -186,9 +186,12 @@ spec:
                 type: integer
               useTLS:
                 x-kubernetes-preserve-unknown-fields: true
+              xcNamespace:
+                type: string
             required:
             - originServers
             - port
+            - xcNamespace
             type: object
           status:
             properties:

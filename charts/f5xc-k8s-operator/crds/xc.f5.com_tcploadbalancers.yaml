@@ -99,10 +99,13 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
               tlsPassthrough:
                 x-kubernetes-preserve-unknown-fields: true
+              xcNamespace:
+                type: string
             required:
             - domains
             - listenPort
             - originPools
+            - xcNamespace
             type: object
           status:
             description: TCPLoadBalancerStatus defines the observed state of TCPLoadBalancer.
