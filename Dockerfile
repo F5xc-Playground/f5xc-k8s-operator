@@ -8,5 +8,6 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o manager ./cmd/
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/manager .
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 USER 65532:65532
 ENTRYPOINT ["/manager"]
