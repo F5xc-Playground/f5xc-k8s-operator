@@ -461,3 +461,29 @@ func TestResolveRoute_NoIngress(t *testing.T) {
 	assert.True(t, result.Pending)
 	assert.Contains(t, result.Message, "no ingress status")
 }
+
+func TestResolveRoute_MultiIngressSecondAdmitted(t *testing.T) {
+	route := &routev1.Route{
+		Status: routev1.RouteStatus{
+			Ingress: []routev1.RouteIngress{
+				{
+					Host: "a.example.com",
+					Conditions: []routev1.RouteIngressCondition{
+						{Type: routev1.RouteAdmitted, Status: corev1.ConditionFalse},
+					},
+				},
+				{
+					Host: "b.example.com",
+					Conditions: []routev1.RouteIngressCondition{
+						{Type: routev1.RouteAdmitted, Status: corev1.ConditionTrue},
+					},
+				},
+			},
+		},
+	}
+
+	result := ResolveRoute(route)
+	assert.False(t, result.Pending)
+	assert.Equal(t, "b.example.com", result.Address)
+	assert.Equal(t, uint32(80), result.Port)
+}

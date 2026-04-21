@@ -57,6 +57,12 @@ func resolveLoadBalancer(svc *corev1.Service) ResolvedOrigin {
 	if addr == "" {
 		addr = ingress.Hostname
 	}
+	if addr == "" {
+		return ResolvedOrigin{
+			Pending: true,
+			Message: "Service loadBalancer ingress has neither IP nor hostname",
+		}
+	}
 	return ResolvedOrigin{
 		Address:     addr,
 		Port:        servicePort(svc),
@@ -133,6 +139,12 @@ func ResolveIngress(ing *networkingv1.Ingress) ResolvedOrigin {
 	addr := ingress.IP
 	if addr == "" {
 		addr = ingress.Hostname
+	}
+	if addr == "" {
+		return ResolvedOrigin{
+			Pending: true,
+			Message: "Ingress loadBalancer ingress has neither IP nor hostname",
+		}
 	}
 
 	port := uint32(80)
