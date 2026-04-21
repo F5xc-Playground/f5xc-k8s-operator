@@ -29,6 +29,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
+        description: RateLimiter is the Schema for the ratelimiters API.
         properties:
           apiVersion:
             description: |-

@@ -29,6 +29,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
+        description: AppFirewall is the Schema for the appfirewalls API.
         properties:
           apiVersion:
             description: |-

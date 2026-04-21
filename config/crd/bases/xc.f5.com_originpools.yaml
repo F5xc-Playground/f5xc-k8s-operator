@@ -88,6 +88,28 @@ spec:
                       required:
                       - serviceName
                       type: object
+                    discover:
+                      properties:
+                        addressOverride:
+                          type: string
+                        portOverride:
+                          format: int32
+                          type: integer
+                        resource:
+                          properties:
+                            kind:
+                              type: string
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          required:
+                          - kind
+                          - name
+                          type: object
+                      required:
+                      - resource
+                      type: object
                     k8sService:
                       properties:
                         serviceName:
@@ -224,6 +246,37 @@ spec:
                   - reason
                   - status
                   - type
+                  type: object
+                type: array
+              discoveredOrigins:
+                items:
+                  properties:
+                    address:
+                      type: string
+                    addressType:
+                      type: string
+                    message:
+                      type: string
+                    port:
+                      format: int32
+                      type: integer
+                    resource:
+                      properties:
+                        kind:
+                          type: string
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      required:
+                      - kind
+                      - name
+                      type: object
+                    status:
+                      type: string
+                  required:
+                  - resource
+                  - status
                   type: object
                 type: array
               observedGeneration:
