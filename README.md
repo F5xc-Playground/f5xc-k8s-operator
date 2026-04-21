@@ -20,12 +20,13 @@ A Kubernetes operator that manages F5 Distributed Cloud resources declaratively.
 
 - Kubernetes 1.26+
 - Helm 3
-- An F5 XC tenant with an [API token](https://docs.cloud.f5.com/docs/how-to/user-mgmt/credentials)
+- An F5 XC tenant with an [API token or API certificate](https://docs.cloud.f5.com/docs/how-to/user-mgmt/credentials)
 
 ### Install
 
 ```bash
-helm install f5xc-operator ./charts/f5xc-k8s-operator \
+helm install f5xc-operator \
+  https://github.com/F5xc-Playground/f5xc-k8s-operator/releases/download/v0.1.0/f5xc-k8s-operator-0.1.0.tgz \
   --set tenantURL=https://YOUR-TENANT.console.ves.volterra.io \
   --set credentials.apiToken=YOUR_API_TOKEN \
   --namespace f5xc-system --create-namespace
