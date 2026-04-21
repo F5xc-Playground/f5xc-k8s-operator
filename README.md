@@ -2,6 +2,8 @@
 
 A Kubernetes operator that manages [F5 Distributed Cloud](https://www.f5.com/cloud) resources declaratively. Define load balancers, origin pools, firewalls, and policies as Kubernetes custom resources and the operator syncs them to your F5 XC tenant.
 
+Origin pools support automatic service discovery from Kubernetes Services, Ingress, Gateway API, and OpenShift Routes, so your F5 XC configuration stays in sync as endpoints change.
+
 ## Resources
 
 | Kind | Short Name | Description |
