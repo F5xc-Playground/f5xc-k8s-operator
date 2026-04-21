@@ -15,6 +15,7 @@ rules:
 - apiGroups:
   - xc.f5.com
   resources:
+  - healthchecks
   - originpools
   - ratelimiters
   verbs:
@@ -28,6 +29,7 @@ rules:
 - apiGroups:
   - xc.f5.com
   resources:
+  - healthchecks/finalizers
   - originpools/finalizers
   - ratelimiters/finalizers
   verbs:
@@ -35,6 +37,7 @@ rules:
 - apiGroups:
   - xc.f5.com
   resources:
+  - healthchecks/status
   - originpools/status
   - ratelimiters/status
   verbs:
