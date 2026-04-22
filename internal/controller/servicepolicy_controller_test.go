@@ -13,8 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
 	"github.com/kreynolds/f5xc-k8s-operator/internal/xcclient"
 	"github.com/kreynolds/f5xc-k8s-operator/internal/xcclientset"
@@ -105,8 +103,8 @@ func sampleServicePolicy(name, namespace string) *v1alpha1.ServicePolicy {
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: v1alpha1.ServicePolicySpec{
 			XCNamespace:      namespace,
-			AllowAllRequests: &apiextensionsv1.JSON{Raw: []byte("{}")},
-			AnyServer:        &apiextensionsv1.JSON{Raw: []byte("{}")},
+			AllowAllRequests: &v1alpha1.EmptyObject{},
+			AnyServer:        &v1alpha1.EmptyObject{},
 		},
 	}
 }
