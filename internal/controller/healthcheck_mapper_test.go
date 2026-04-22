@@ -54,8 +54,8 @@ func TestBuildHealthCheckCreate_TCPProbe(t *testing.T) {
 
 	result := buildHealthCheckCreate(cr, "ns")
 	require.NotNil(t, result.Spec.TCPHealthCheck)
-	assert.Equal(t, "PING", result.Spec.TCPHealthCheck.Send)
-	assert.Equal(t, "PONG", result.Spec.TCPHealthCheck.Receive)
+	assert.Equal(t, "PING", result.Spec.TCPHealthCheck.SendPayload)
+	assert.Equal(t, "PONG", result.Spec.TCPHealthCheck.ExpectedResponse)
 	assert.Nil(t, result.Spec.HTTPHealthCheck)
 }
 

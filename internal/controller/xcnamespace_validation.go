@@ -50,7 +50,7 @@ func validateAppFirewallXCNamespace(ctx context.Context, c client.Client, parent
 	if err := c.Get(ctx, key, &fw); err != nil {
 		return nil
 	}
-	if fw.Spec.XCNamespace != "" && fw.Spec.XCNamespace != parentXCNS {
+	if fw.Spec.XCNamespace != "" && fw.Spec.XCNamespace != parentXCNS && fw.Spec.XCNamespace != "shared" {
 		return &xcNamespaceError{
 			ParentKind: parentKind, ParentName: parentName, ParentXCNS: parentXCNS,
 			RefKind: "AppFirewall", RefName: fwName, RefXCNS: fw.Spec.XCNamespace,
@@ -66,7 +66,7 @@ func validateHealthCheckXCNamespace(ctx context.Context, c client.Client, parent
 	if err := c.Get(ctx, key, &hc); err != nil {
 		return nil
 	}
-	if hc.Spec.XCNamespace != "" && hc.Spec.XCNamespace != parentXCNS {
+	if hc.Spec.XCNamespace != "" && hc.Spec.XCNamespace != parentXCNS && hc.Spec.XCNamespace != "shared" {
 		return &xcNamespaceError{
 			ParentKind: parentKind, ParentName: parentName, ParentXCNS: parentXCNS,
 			RefKind: "HealthCheck", RefName: hcName, RefXCNS: hc.Spec.XCNamespace,

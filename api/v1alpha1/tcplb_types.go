@@ -38,10 +38,10 @@ type TCPLoadBalancerSpec struct {
 	ListenPort  uint32      `json:"listenPort"`
 	OriginPools []RoutePool `json:"originPools"`
 
-	// TLS OneOf: noTLS, tlsParameters, tlsPassthrough
+	// TLS OneOf: noTLS, tlsParameters, tlsTCPAutoCert
 	NoTLS          *apiextensionsv1.JSON `json:"noTLS,omitempty"`
 	TLSParameters  *apiextensionsv1.JSON `json:"tlsParameters,omitempty"`
-	TLSPassthrough *apiextensionsv1.JSON `json:"tlsPassthrough,omitempty"`
+	TLSTCPAutoCert *apiextensionsv1.JSON `json:"tlsTCPAutoCert,omitempty"`
 
 	// Advertise OneOf: advertiseOnPublicDefaultVIP, advertiseOnPublic, advertiseCustom, doNotAdvertise
 	AdvertiseOnPublicDefaultVIP *apiextensionsv1.JSON `json:"advertiseOnPublicDefaultVIP,omitempty"`

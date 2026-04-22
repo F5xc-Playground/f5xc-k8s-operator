@@ -137,11 +137,40 @@ Each entry in `originServers` must specify exactly one of:
 |-------|-------------|
 | `publicIP.ip` | Public IP address |
 | `publicName.dnsName` | Public DNS name |
-| `privateIP.ip` | Private IP (with optional `site` reference) |
-| `privateName.dnsName` | Private DNS name (with optional `site` reference) |
-| `k8sService.serviceName` | Kubernetes Service (with optional `serviceNamespace` and `site`) |
-| `consulService.serviceName` | Consul service (with optional `site`) |
+| `privateIP.ip` | Private IP (with `site` or `virtualSite` and network choice) |
+| `privateName.dnsName` | Private DNS name (with `site` or `virtualSite` and network choice) |
+| `k8sService.serviceName` | Kubernetes Service (with optional `serviceNamespace`, `site`/`virtualSite`, and network choice) |
+| `consulService.serviceName` | Consul service (with `site` or `virtualSite` and network choice) |
 | `discover.resource` | Auto-discover from a K8s resource (`kind`, `name`, `namespace`) |
+
+### Site Location
+
+Private, K8S, and Consul origin servers require a site or virtual site reference. Use `site` for a specific CE site, or `virtualSite` for a virtual site selector:
+
+```yaml
+- privateIP:
+    ip: "10.0.0.1"
+    site:
+      name: my-ce-site
+    outsideNetwork: {}
+```
+
+```yaml
+- privateIP:
+    ip: "10.0.0.1"
+    virtualSite:
+      name: my-vsite
+    insideNetwork: {}
+```
+
+### Network Choice
+
+For private/K8S/Consul origins, you can specify which network interface to use:
+
+| Field | Description |
+|-------|-------------|
+| `insideNetwork` | `{}` to use the inside network interface |
+| `outsideNetwork` | `{}` to use the outside network interface |
 
 ## Status
 

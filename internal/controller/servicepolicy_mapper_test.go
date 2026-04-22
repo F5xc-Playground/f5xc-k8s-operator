@@ -17,7 +17,6 @@ func TestBuildServicePolicyCreate_BasicFields(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "my-sp", Namespace: "default"},
 		Spec: v1alpha1.ServicePolicySpec{
 			XCNamespace:      "default",
-			Algo:             "FIRST_MATCH",
 			AllowAllRequests: &apiextensionsv1.JSON{Raw: []byte("{}")},
 			AnyServer:        &apiextensionsv1.JSON{Raw: []byte("{}")},
 		},
@@ -26,7 +25,6 @@ func TestBuildServicePolicyCreate_BasicFields(t *testing.T) {
 	result := buildServicePolicyCreate(cr, "default")
 	assert.Equal(t, "my-sp", result.Metadata.Name)
 	assert.Equal(t, "default", result.Metadata.Namespace)
-	assert.Equal(t, "FIRST_MATCH", result.Spec.Algo)
 	assert.JSONEq(t, `{}`, string(result.Spec.AllowAllRequests))
 	assert.JSONEq(t, `{}`, string(result.Spec.AnyServer))
 }
@@ -37,7 +35,6 @@ func TestBuildServicePolicyCreate_AllowList(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "sp-allow", Namespace: "ns"},
 		Spec: v1alpha1.ServicePolicySpec{
 			XCNamespace: "ns",
-			Algo:        "FIRST_MATCH",
 			AllowList:   &apiextensionsv1.JSON{Raw: json.RawMessage(allowListJSON)},
 			AnyServer:   &apiextensionsv1.JSON{Raw: []byte("{}")},
 		},
@@ -86,12 +83,12 @@ func TestBuildServicePolicyCreate_ServerNameChoice(t *testing.T) {
 		Spec: v1alpha1.ServicePolicySpec{
 			XCNamespace:      "ns",
 			AllowAllRequests: &apiextensionsv1.JSON{Raw: []byte("{}")},
-			ServerName:       &apiextensionsv1.JSON{Raw: []byte(`"app.example.com"`)},
+			ServerName:       "app.example.com",
 		},
 	}
 
 	result := buildServicePolicyCreate(cr, "ns")
-	assert.JSONEq(t, `"app.example.com"`, string(result.Spec.ServerName))
+	assert.Equal(t, "app.example.com", result.Spec.ServerName)
 	assert.Nil(t, result.Spec.AnyServer)
 	assert.Nil(t, result.Spec.ServerSelector)
 }
@@ -101,14 +98,12 @@ func TestBuildServicePolicyReplace_IncludesResourceVersion(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "my-sp", Namespace: "ns"},
 		Spec: v1alpha1.ServicePolicySpec{
 			XCNamespace:      "ns",
-			Algo:             "FIRST_MATCH",
 			AllowAllRequests: &apiextensionsv1.JSON{Raw: []byte("{}")},
 		},
 	}
 
 	result := buildServicePolicyReplace(cr, "ns", "rv-5")
 	assert.Equal(t, "rv-5", result.Metadata.ResourceVersion)
-	assert.Equal(t, "FIRST_MATCH", result.Spec.Algo)
 }
 
 func TestBuildServicePolicyCreate_XCNamespaceOverride(t *testing.T) {
@@ -116,7 +111,6 @@ func TestBuildServicePolicyCreate_XCNamespaceOverride(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "my-sp", Namespace: "k8s-ns"},
 		Spec: v1alpha1.ServicePolicySpec{
 			XCNamespace:      "k8s-ns",
-			Algo:             "FIRST_MATCH",
 			AllowAllRequests: &apiextensionsv1.JSON{Raw: []byte("{}")},
 		},
 	}
@@ -130,7 +124,6 @@ func TestBuildServicePolicyDesiredSpecJSON(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "my-sp", Namespace: "ns"},
 		Spec: v1alpha1.ServicePolicySpec{
 			XCNamespace:      "ns",
-			Algo:             "FIRST_MATCH",
 			AllowAllRequests: &apiextensionsv1.JSON{Raw: []byte("{}")},
 		},
 	}
@@ -140,8 +133,8 @@ func TestBuildServicePolicyDesiredSpecJSON(t *testing.T) {
 
 	var spec map[string]json.RawMessage
 	require.NoError(t, json.Unmarshal(raw, &spec))
-	_, hasAlgo := spec["algo"]
-	assert.True(t, hasAlgo)
+	_, hasAllowAll := spec["allow_all_requests"]
+	assert.True(t, hasAllowAll)
 	_, hasMetadata := spec["metadata"]
 	assert.False(t, hasMetadata, "spec JSON must not contain metadata")
 }

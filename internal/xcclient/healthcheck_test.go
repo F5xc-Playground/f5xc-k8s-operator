@@ -73,8 +73,8 @@ func TestHealthCheck_DeleteAndVerifyGone(t *testing.T) {
 		Metadata: xcclient.ObjectMeta{Name: "hc-to-delete", Namespace: "default"},
 		Spec: xcclient.HealthCheckSpec{
 			TCPHealthCheck: &xcclient.TCPHealthCheck{
-				Send:    "PING",
-				Receive: "PONG",
+				SendPayload:      "PING",
+				ExpectedResponse: "PONG",
 			},
 			Interval: 10,
 			Timeout:  3,

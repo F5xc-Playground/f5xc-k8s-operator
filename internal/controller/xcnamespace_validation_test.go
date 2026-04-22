@@ -54,6 +54,30 @@ func TestValidateOriginPoolXCNamespace_DifferentNamespace(t *testing.T) {
 	}
 }
 
+func TestValidateOriginPoolXCNamespace_SharedNamespaceNotAllowed(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(scheme)
+
+	pool := &v1alpha1.OriginPool{
+		ObjectMeta: metav1.ObjectMeta{Name: "pool-1", Namespace: "default"},
+		Spec:       v1alpha1.OriginPoolSpec{XCNamespace: "shared", Port: 443},
+	}
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pool).Build()
+
+	err := validateOriginPoolXCNamespace(context.Background(), c, "HTTPLoadBalancer", "my-hlb", "app-ns", "default", "pool-1")
+	if err == nil {
+		t.Fatal("expected error when OriginPool is in 'shared' xcNamespace, got nil")
+	}
+
+	var nsErr *xcNamespaceError
+	if !errors.As(err, &nsErr) {
+		t.Fatalf("expected *xcNamespaceError, got %T", err)
+	}
+	if nsErr.RefXCNS != "shared" {
+		t.Errorf("expected RefXCNS=shared, got %s", nsErr.RefXCNS)
+	}
+}
+
 func TestValidateOriginPoolXCNamespace_NotFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = v1alpha1.AddToScheme(scheme)
@@ -106,6 +130,22 @@ func TestValidateAppFirewallXCNamespace_DifferentNamespace(t *testing.T) {
 	}
 }
 
+func TestValidateAppFirewallXCNamespace_SharedNamespaceAllowed(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(scheme)
+
+	fw := &v1alpha1.AppFirewall{
+		ObjectMeta: metav1.ObjectMeta{Name: "fw-1", Namespace: "default"},
+		Spec:       v1alpha1.AppFirewallSpec{XCNamespace: "shared"},
+	}
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(fw).Build()
+
+	err := validateAppFirewallXCNamespace(context.Background(), c, "HTTPLoadBalancer", "my-hlb", "app-ns", "default", "fw-1")
+	if err != nil {
+		t.Errorf("expected no error when ref is in 'shared' xcNamespace, got: %v", err)
+	}
+}
+
 func TestValidateHealthCheckXCNamespace_SameNamespace(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = v1alpha1.AddToScheme(scheme)
@@ -143,6 +183,22 @@ func TestValidateHealthCheckXCNamespace_DifferentNamespace(t *testing.T) {
 	}
 	if nsErr.RefKind != "HealthCheck" {
 		t.Errorf("expected RefKind=HealthCheck, got %s", nsErr.RefKind)
+	}
+}
+
+func TestValidateHealthCheckXCNamespace_SharedNamespaceAllowed(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(scheme)
+
+	hc := &v1alpha1.HealthCheck{
+		ObjectMeta: metav1.ObjectMeta{Name: "hc-1", Namespace: "default"},
+		Spec:       v1alpha1.HealthCheckSpec{XCNamespace: "shared"},
+	}
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(hc).Build()
+
+	err := validateHealthCheckXCNamespace(context.Background(), c, "OriginPool", "my-pool", "app-ns", "default", "hc-1")
+	if err != nil {
+		t.Errorf("expected no error when ref is in 'shared' xcNamespace, got: %v", err)
 	}
 }
 

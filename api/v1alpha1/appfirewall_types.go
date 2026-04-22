@@ -54,12 +54,10 @@ type AppFirewallSpec struct {
 	DefaultBotSetting    *apiextensionsv1.JSON `json:"defaultBotSetting,omitempty"`
 	BotProtectionSetting *apiextensionsv1.JSON `json:"botProtectionSetting,omitempty"`
 
-	// Anonymization — OneOf: DefaultAnonymization | CustomAnonymization
+	// Anonymization — OneOf: DefaultAnonymization | DisableAnonymization | CustomAnonymization
 	DefaultAnonymization *apiextensionsv1.JSON `json:"defaultAnonymization,omitempty"`
+	DisableAnonymization *apiextensionsv1.JSON `json:"disableAnonymization,omitempty"`
 	CustomAnonymization  *apiextensionsv1.JSON `json:"customAnonymization,omitempty"`
-
-	// Loadbalancer setting
-	UseLoadbalancerSetting *apiextensionsv1.JSON `json:"useLoadbalancerSetting,omitempty"`
 }
 
 type AppFirewallStatus struct {

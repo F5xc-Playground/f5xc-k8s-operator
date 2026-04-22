@@ -263,7 +263,6 @@ func TestContract_ServicePolicyCRDLifecycle(t *testing.T) {
 		},
 		Spec: v1alpha1.ServicePolicySpec{
 			XCNamespace:      xcNS,
-			Algo:             "FIRST_MATCH",
 			AllowAllRequests: &apiextensionsv1.JSON{Raw: []byte("{}")},
 			AnyServer:        &apiextensionsv1.JSON{Raw: []byte("{}")},
 		},
@@ -279,7 +278,7 @@ func TestContract_ServicePolicyCRDLifecycle(t *testing.T) {
 	// Verify it exists in XC API.
 	sp, err := xcClient.GetServicePolicy(context.Background(), xcNS, "contract-sp")
 	require.NoError(t, err)
-	assert.Equal(t, "FIRST_MATCH", sp.Spec.Algo)
+	assert.NotNil(t, sp.Spec.AllowAllRequests)
 
 	// Delete the CR and wait for cleanup.
 	require.NoError(t, testClient.Delete(testCtx, cr))

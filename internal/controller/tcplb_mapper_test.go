@@ -34,9 +34,9 @@ func TestBuildTCPLoadBalancerCreate_BasicFields(t *testing.T) {
 	assert.Equal(t, "default", result.Metadata.Namespace)
 	assert.Equal(t, []string{"tcp.example.com"}, result.Spec.Domains)
 	assert.Equal(t, uint32(443), result.Spec.ListenPort)
-	require.Len(t, result.Spec.OriginPools, 1)
-	assert.Equal(t, "pool1", result.Spec.OriginPools[0].Pool.Name)
-	assert.Equal(t, uint32(1), result.Spec.OriginPools[0].Weight)
+	require.Len(t, result.Spec.OriginPoolWeights, 1)
+	assert.Equal(t, "pool1", result.Spec.OriginPoolWeights[0].Pool.Name)
+	assert.Equal(t, uint32(1), result.Spec.OriginPoolWeights[0].Weight)
 }
 
 func TestBuildTCPLoadBalancerCreate_RoutePoolWeightPriority(t *testing.T) {
@@ -54,27 +54,27 @@ func TestBuildTCPLoadBalancerCreate_RoutePoolWeightPriority(t *testing.T) {
 
 	result := buildTCPLoadBalancerCreate(cr, "ns")
 
-	require.Len(t, result.Spec.OriginPools, 2)
-	assert.Equal(t, "pool-a", result.Spec.OriginPools[0].Pool.Name)
-	assert.Equal(t, "shared", result.Spec.OriginPools[0].Pool.Namespace)
-	assert.Equal(t, uint32(10), result.Spec.OriginPools[0].Weight)
-	assert.Equal(t, uint32(2), result.Spec.OriginPools[0].Priority)
+	require.Len(t, result.Spec.OriginPoolWeights, 2)
+	assert.Equal(t, "pool-a", result.Spec.OriginPoolWeights[0].Pool.Name)
+	assert.Equal(t, "shared", result.Spec.OriginPoolWeights[0].Pool.Namespace)
+	assert.Equal(t, uint32(10), result.Spec.OriginPoolWeights[0].Weight)
+	assert.Equal(t, uint32(2), result.Spec.OriginPoolWeights[0].Priority)
 
-	assert.Equal(t, "pool-b", result.Spec.OriginPools[1].Pool.Name)
-	assert.Equal(t, uint32(0), result.Spec.OriginPools[1].Weight)
-	assert.Equal(t, uint32(0), result.Spec.OriginPools[1].Priority)
+	assert.Equal(t, "pool-b", result.Spec.OriginPoolWeights[1].Pool.Name)
+	assert.Equal(t, uint32(0), result.Spec.OriginPoolWeights[1].Weight)
+	assert.Equal(t, uint32(0), result.Spec.OriginPoolWeights[1].Priority)
 }
 
-func TestBuildTCPLoadBalancerCreate_TLSPassthrough(t *testing.T) {
-	tlsJSON := json.RawMessage(`{"sni_check":{}}`)
+func TestBuildTCPLoadBalancerCreate_TLSTCPAutoCert(t *testing.T) {
+	tlsJSON := json.RawMessage(`{"no_mtls":{}}`)
 	cr := sampleTCPLoadBalancer("tlb-tls", "ns")
-	cr.Spec.TLSPassthrough = &apiextensionsv1.JSON{Raw: tlsJSON}
+	cr.Spec.TLSTCPAutoCert = &apiextensionsv1.JSON{Raw: tlsJSON}
 
 	result := buildTCPLoadBalancerCreate(cr, "ns")
 
-	assert.JSONEq(t, `{"sni_check":{}}`, string(result.Spec.TLSPassthrough))
-	assert.Nil(t, result.Spec.NoTLS)
-	assert.Nil(t, result.Spec.TLSParameters)
+	assert.JSONEq(t, `{"no_mtls":{}}`, string(result.Spec.TLSTCPAutoCert))
+	assert.Nil(t, result.Spec.TCP)
+	assert.Nil(t, result.Spec.TLSTCP)
 }
 
 func TestBuildTCPLoadBalancerReplace_IncludesResourceVersion(t *testing.T) {

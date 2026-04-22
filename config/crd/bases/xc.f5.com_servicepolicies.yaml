@@ -50,8 +50,6 @@ spec:
             type: object
           spec:
             properties:
-              algo:
-                type: string
               allowAllRequests:
                 description: 'Rule choice OneOf: allowAllRequests, allowList, denyAllRequests,
                   denyList, ruleList'
@@ -69,7 +67,7 @@ spec:
               ruleList:
                 x-kubernetes-preserve-unknown-fields: true
               serverName:
-                x-kubernetes-preserve-unknown-fields: true
+                type: string
               serverNameMatcher:
                 x-kubernetes-preserve-unknown-fields: true
               serverSelector:

@@ -33,7 +33,6 @@ type ServicePolicyList struct {
 type ServicePolicySpec struct {
 	// +kubebuilder:validation:Required
 	XCNamespace string `json:"xcNamespace"`
-	Algo        string `json:"algo,omitempty"`
 
 	// Rule choice OneOf: allowAllRequests, allowList, denyAllRequests, denyList, ruleList
 	AllowAllRequests *apiextensionsv1.JSON `json:"allowAllRequests,omitempty"`
@@ -44,7 +43,7 @@ type ServicePolicySpec struct {
 
 	// Server choice OneOf: anyServer, serverName, serverNameMatcher, serverSelector
 	AnyServer         *apiextensionsv1.JSON `json:"anyServer,omitempty"`
-	ServerName        *apiextensionsv1.JSON `json:"serverName,omitempty"`
+	ServerName        string                `json:"serverName,omitempty"`
 	ServerNameMatcher *apiextensionsv1.JSON `json:"serverNameMatcher,omitempty"`
 	ServerSelector    *apiextensionsv1.JSON `json:"serverSelector,omitempty"`
 }

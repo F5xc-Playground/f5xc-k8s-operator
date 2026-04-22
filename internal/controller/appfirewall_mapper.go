@@ -69,11 +69,11 @@ func mapAppFirewallSpec(spec *v1alpha1.AppFirewallSpec) xcclient.AppFirewallSpec
 	if spec.DefaultAnonymization != nil {
 		out.DefaultAnonymization = json.RawMessage(spec.DefaultAnonymization.Raw)
 	}
+	if spec.DisableAnonymization != nil {
+		out.DisableAnonymization = json.RawMessage(spec.DisableAnonymization.Raw)
+	}
 	if spec.CustomAnonymization != nil {
 		out.CustomAnonymization = json.RawMessage(spec.CustomAnonymization.Raw)
-	}
-	if spec.UseLoadbalancerSetting != nil {
-		out.UseLoadbalancerSetting = json.RawMessage(spec.UseLoadbalancerSetting.Raw)
 	}
 
 	return out

@@ -217,6 +217,22 @@ func (f *fakeXCClient) ListRateLimiters(_ context.Context, ns string) ([]*xcclie
 	return nil, nil
 }
 
+func (f *fakeXCClient) CreateCertificate(_ context.Context, ns string, cert *xcclient.CertificateCreate) (*xcclient.Certificate, error) {
+	return nil, nil
+}
+func (f *fakeXCClient) GetCertificate(_ context.Context, ns, name string) (*xcclient.Certificate, error) {
+	return nil, nil
+}
+func (f *fakeXCClient) ReplaceCertificate(_ context.Context, ns, name string, cert *xcclient.CertificateReplace) (*xcclient.Certificate, error) {
+	return nil, nil
+}
+func (f *fakeXCClient) DeleteCertificate(_ context.Context, ns, name string) error {
+	return nil
+}
+func (f *fakeXCClient) ListCertificates(_ context.Context, ns string) ([]*xcclient.Certificate, error) {
+	return nil, nil
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

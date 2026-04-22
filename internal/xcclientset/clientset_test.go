@@ -122,6 +122,21 @@ func (f *fakeClient) ListRateLimiters(_ context.Context, _ string) ([]*xcclient.
 	return nil, nil
 }
 
+// Certificate
+func (f *fakeClient) CreateCertificate(_ context.Context, _ string, _ *xcclient.CertificateCreate) (*xcclient.Certificate, error) {
+	return nil, nil
+}
+func (f *fakeClient) GetCertificate(_ context.Context, _, _ string) (*xcclient.Certificate, error) {
+	return nil, nil
+}
+func (f *fakeClient) ReplaceCertificate(_ context.Context, _, _ string, _ *xcclient.CertificateReplace) (*xcclient.Certificate, error) {
+	return nil, nil
+}
+func (f *fakeClient) DeleteCertificate(_ context.Context, _, _ string) error { return nil }
+func (f *fakeClient) ListCertificates(_ context.Context, _ string) ([]*xcclient.Certificate, error) {
+	return nil, nil
+}
+
 // Diff helper
 func (f *fakeClient) ClientNeedsUpdate(_, _ json.RawMessage) (bool, error) { return false, nil }
 

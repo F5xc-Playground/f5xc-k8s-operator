@@ -20,7 +20,6 @@ metadata:
   name: allow-all
 spec:
   xcNamespace: my-namespace
-  algo: "FIRST_MATCH"
   allowAllRequests: {}
   anyServer: {}
 ```
@@ -47,7 +46,7 @@ metadata:
   name: internal-only
 spec:
   xcNamespace: my-namespace
-  algo: "FIRST_MATCH"
+
   allowList:
     rules:
       - metadata:
@@ -70,7 +69,7 @@ metadata:
   name: block-bad-actors
 spec:
   xcNamespace: my-namespace
-  algo: "FIRST_MATCH"
+
   denyList:
     rules:
       - metadata:
@@ -92,7 +91,6 @@ spec:
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `xcNamespace` | string | Yes | F5 XC namespace |
-| `algo` | string | No | Rule matching algorithm (e.g., `FIRST_MATCH`) |
 
 ### Rule Choice (choose one)
 
@@ -111,7 +109,7 @@ Controls which servers this policy applies to.
 | Field | Description |
 |-------|-------------|
 | `anyServer` | `{}` to apply to all servers |
-| `serverName` | Match a specific server name |
+| `serverName` | Match a specific server name (string) |
 | `serverNameMatcher` | Match server names by pattern |
 | `serverSelector` | Match servers by label selector |
 

@@ -31,12 +31,10 @@ type AppFirewallSpec struct {
 	DefaultBotSetting    json.RawMessage `json:"default_bot_setting,omitempty"`
 	BotProtectionSetting json.RawMessage `json:"bot_protection_setting,omitempty"`
 
-	// Anonymization — OneOf: DefaultAnonymization | CustomAnonymization
+	// Anonymization — OneOf: DefaultAnonymization | DisableAnonymization | CustomAnonymization
 	DefaultAnonymization json.RawMessage `json:"default_anonymization,omitempty"`
+	DisableAnonymization json.RawMessage `json:"disable_anonymization,omitempty"`
 	CustomAnonymization  json.RawMessage `json:"custom_anonymization,omitempty"`
-
-	// Loadbalancer setting
-	UseLoadbalancerSetting json.RawMessage `json:"use_loadbalancer_setting,omitempty"`
 }
 
 // AppFirewallCreate is the request body for creating an App Firewall.

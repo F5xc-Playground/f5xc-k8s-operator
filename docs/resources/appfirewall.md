@@ -97,6 +97,6 @@ spec:
 | Blocking page | `useDefaultBlockingPage`, `blockingPage` |
 | Response codes | `allowAllResponseCodes`, `allowedResponseCodes` |
 | Bot protection | `defaultBotSetting`, `botProtectionSetting` |
-| Anonymization | `defaultAnonymization`, `customAnonymization` |
+| Anonymization | `defaultAnonymization`, `disableAnonymization`, `customAnonymization` |
 
 All OneOf fields accept JSON objects passed through to the XC API.

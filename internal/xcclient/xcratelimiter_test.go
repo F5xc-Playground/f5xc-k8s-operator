@@ -16,9 +16,9 @@ func sampleRateLimiterCreate(name string) xcclient.XCRateLimiterCreate {
 	return xcclient.XCRateLimiterCreate{
 		Metadata: xcclient.ObjectMeta{Name: name},
 		Spec: xcclient.XCRateLimiterSpec{
-			Threshold:       100,
-			Unit:            "MINUTE",
-			BurstMultiplier: 2,
+			Limits: []xcclient.RateLimitValue{
+				{TotalNumber: 100, Unit: "MINUTE", BurstMultiplier: 2},
+			},
 		},
 	}
 }

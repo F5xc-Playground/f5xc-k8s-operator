@@ -21,7 +21,7 @@ func TestTCPLoadBalancer_CreateAndGet(t *testing.T) {
 		Spec: TCPLoadBalancerSpec{
 			Domains:    []string{"tcp.example.com"},
 			ListenPort: 5432,
-			OriginPools: []RoutePool{
+			OriginPoolWeights: []RoutePool{
 				{Pool: ObjectRef{Name: "db-pool", Namespace: "default"}, Weight: 1},
 			},
 			AdvertiseOnPublicDefaultVIP: json.RawMessage(`{}`),

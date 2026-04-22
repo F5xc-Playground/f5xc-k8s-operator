@@ -64,7 +64,8 @@ spec:
               customAnonymization:
                 x-kubernetes-preserve-unknown-fields: true
               defaultAnonymization:
-                description: 'Anonymization — OneOf: DefaultAnonymization | CustomAnonymization'
+                description: 'Anonymization — OneOf: DefaultAnonymization | DisableAnonymization
+                  | CustomAnonymization'
                 x-kubernetes-preserve-unknown-fields: true
               defaultBotSetting:
                 description: 'Bot setting — OneOf: DefaultBotSetting | BotProtectionSetting'
@@ -74,14 +75,13 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
               detectionSettings:
                 x-kubernetes-preserve-unknown-fields: true
+              disableAnonymization:
+                x-kubernetes-preserve-unknown-fields: true
               monitoring:
                 description: 'Enforcement mode — OneOf: Monitoring | Blocking'
                 x-kubernetes-preserve-unknown-fields: true
               useDefaultBlockingPage:
                 description: 'Blocking page — OneOf: UseDefaultBlockingPage | BlockingPage'
-                x-kubernetes-preserve-unknown-fields: true
-              useLoadbalancerSetting:
-                description: Loadbalancer setting
                 x-kubernetes-preserve-unknown-fields: true
               xcNamespace:
                 type: string

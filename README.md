@@ -10,11 +10,12 @@ Origin pools support automatic service discovery from Kubernetes Services, Ingre
 |------|-----------|-------------|
 | [OriginPool](docs/resources/originpool.md) | `op` | Backend server groups with optional auto-discovery from K8s Services, Ingress, Gateway, and Routes |
 | [HTTPLoadBalancer](docs/resources/httploadbalancer.md) | `hlb` | HTTP/HTTPS load balancers with WAF, bot defense, rate limiting |
-| [TCPLoadBalancer](docs/resources/tcploadbalancer.md) | `tlb` | TCP load balancers with TLS termination or passthrough |
+| [TCPLoadBalancer](docs/resources/tcploadbalancer.md) | `tlb` | TCP load balancers with TLS termination or auto-cert |
 | [AppFirewall](docs/resources/appfirewall.md) | `afw` | Web Application Firewall policies |
 | [HealthCheck](docs/resources/healthcheck.md) | `hc` | HTTP and TCP health checks for origin pools |
 | [ServicePolicy](docs/resources/servicepolicy.md) | `sp` | L7 request-level allow/deny policies |
 | [RateLimiter](docs/resources/ratelimiter.md) | `rl` | Rate limiting thresholds |
+| [Certificate](docs/resources/certificate.md) | `cert` | TLS certificates from K8s Secrets, synced to XC |
 
 ## Quick Start
 

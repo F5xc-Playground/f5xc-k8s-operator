@@ -69,7 +69,7 @@ spec:
                 format: int32
                 type: integer
               noTLS:
-                description: 'TLS OneOf: noTLS, tlsParameters, tlsPassthrough'
+                description: 'TLS OneOf: noTLS, tlsParameters, tlsTCPAutoCert'
                 x-kubernetes-preserve-unknown-fields: true
               originPools:
                 items:
@@ -97,7 +97,7 @@ spec:
                 type: array
               tlsParameters:
                 x-kubernetes-preserve-unknown-fields: true
-              tlsPassthrough:
+              tlsTCPAutoCert:
                 x-kubernetes-preserve-unknown-fields: true
               xcNamespace:
                 type: string

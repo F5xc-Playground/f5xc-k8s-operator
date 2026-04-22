@@ -40,18 +40,18 @@ func mapTCPLoadBalancerSpec(spec *v1alpha1.TCPLoadBalancerSpec) xcclient.TCPLoad
 	}
 
 	for i := range spec.OriginPools {
-		out.OriginPools = append(out.OriginPools, mapRoutePool(&spec.OriginPools[i]))
+		out.OriginPoolWeights = append(out.OriginPoolWeights, mapRoutePool(&spec.OriginPools[i]))
 	}
 
 	// TLS OneOf
 	if spec.NoTLS != nil {
-		out.NoTLS = json.RawMessage(spec.NoTLS.Raw)
+		out.TCP = json.RawMessage(spec.NoTLS.Raw)
 	}
 	if spec.TLSParameters != nil {
-		out.TLSParameters = json.RawMessage(spec.TLSParameters.Raw)
+		out.TLSTCP = json.RawMessage(spec.TLSParameters.Raw)
 	}
-	if spec.TLSPassthrough != nil {
-		out.TLSPassthrough = json.RawMessage(spec.TLSPassthrough.Raw)
+	if spec.TLSTCPAutoCert != nil {
+		out.TLSTCPAutoCert = json.RawMessage(spec.TLSTCPAutoCert.Raw)
 	}
 
 	// Advertise OneOf

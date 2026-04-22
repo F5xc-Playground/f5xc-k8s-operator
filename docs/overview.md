@@ -20,7 +20,9 @@
 
 Every resource requires an `xcNamespace` field that specifies the F5 XC namespace to create the resource in. This is independent of the Kubernetes namespace — a single cluster can manage resources across multiple XC namespaces.
 
-Resources that reference each other (e.g., an HTTPLoadBalancer referencing an OriginPool) must share the same `xcNamespace`. The operator validates this at reconciliation time and rejects cross-namespace references.
+Resources that reference each other (e.g., an HTTPLoadBalancer referencing an OriginPool) must share the same `xcNamespace`. The operator validates this at reconciliation time.
+
+Certain resource types — App Firewalls, Health Checks, Service Policies, and Certificates — can live in the `shared` XC namespace and be referenced from any application namespace. Origin Pools and Load Balancers cannot be placed in `shared`.
 
 ## OneOf Fields
 

@@ -4,16 +4,16 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.1
-  name: servicepolicies.xc.f5.com
+  name: certificates.xc.f5.com
 spec:
   group: xc.f5.com
   names:
-    kind: ServicePolicy
-    listKind: ServicePolicyList
-    plural: servicepolicies
+    kind: Certificate
+    listKind: CertificateList
+    plural: certificates
     shortNames:
-    - sp
-    singular: servicepolicy
+    - cert
+    singular: certificate
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -29,7 +29,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ServicePolicy is the Schema for the servicepolicies API.
+        description: Certificate is the Schema for the certificates API.
         properties:
           apiVersion:
             description: |-
@@ -50,31 +50,32 @@ spec:
             type: object
           spec:
             properties:
-              allowAllRequests:
-                description: 'Rule choice OneOf: allowAllRequests, allowList, denyAllRequests,
-                  denyList, ruleList'
+              customHashAlgorithms:
+                description: |-
+                  OCSP stapling choice — all optional; omitting defaults to disabled at the API level.
+                  OneOf: CustomHashAlgorithms | DisableOcspStapling | UseSystemDefaults
                 x-kubernetes-preserve-unknown-fields: true
-              allowList:
+              disableOcspStapling:
                 x-kubernetes-preserve-unknown-fields: true
-              anyServer:
-                description: 'Server choice OneOf: anyServer, serverName, serverNameMatcher,
-                  serverSelector'
-                x-kubernetes-preserve-unknown-fields: true
-              denyAllRequests:
-                x-kubernetes-preserve-unknown-fields: true
-              denyList:
-                x-kubernetes-preserve-unknown-fields: true
-              ruleList:
-                x-kubernetes-preserve-unknown-fields: true
-              serverName:
-                type: string
-              serverNameMatcher:
-                x-kubernetes-preserve-unknown-fields: true
-              serverSelector:
+              secretRef:
+                description: SecretRef points to a kubernetes.io/tls Secret containing
+                  tls.crt and tls.key.
+                properties:
+                  name:
+                    type: string
+                  namespace:
+                    description: Namespace of the Secret. Defaults to the Certificate
+                      CR's namespace.
+                    type: string
+                required:
+                - name
+                type: object
+              useSystemDefaults:
                 x-kubernetes-preserve-unknown-fields: true
               xcNamespace:
                 type: string
             required:
+            - secretRef
             - xcNamespace
             type: object
           status:

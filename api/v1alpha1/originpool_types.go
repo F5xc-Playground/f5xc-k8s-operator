@@ -78,24 +78,36 @@ type PublicName struct {
 }
 
 type PrivateIP struct {
-	IP   string     `json:"ip"`
-	Site *ObjectRef `json:"site,omitempty"`
+	IP             string                `json:"ip"`
+	Site           *ObjectRef            `json:"site,omitempty"`
+	VirtualSite    *ObjectRef            `json:"virtualSite,omitempty"`
+	InsideNetwork  *apiextensionsv1.JSON `json:"insideNetwork,omitempty"`
+	OutsideNetwork *apiextensionsv1.JSON `json:"outsideNetwork,omitempty"`
 }
 
 type PrivateName struct {
-	DNSName string     `json:"dnsName"`
-	Site    *ObjectRef `json:"site,omitempty"`
+	DNSName        string                `json:"dnsName"`
+	Site           *ObjectRef            `json:"site,omitempty"`
+	VirtualSite    *ObjectRef            `json:"virtualSite,omitempty"`
+	InsideNetwork  *apiextensionsv1.JSON `json:"insideNetwork,omitempty"`
+	OutsideNetwork *apiextensionsv1.JSON `json:"outsideNetwork,omitempty"`
 }
 
 type K8SService struct {
-	ServiceName      string     `json:"serviceName"`
-	ServiceNamespace string     `json:"serviceNamespace,omitempty"`
-	Site             *ObjectRef `json:"site,omitempty"`
+	ServiceName      string                `json:"serviceName"`
+	ServiceNamespace string                `json:"serviceNamespace,omitempty"`
+	Site             *ObjectRef            `json:"site,omitempty"`
+	VirtualSite      *ObjectRef            `json:"virtualSite,omitempty"`
+	InsideNetwork    *apiextensionsv1.JSON `json:"insideNetwork,omitempty"`
+	OutsideNetwork   *apiextensionsv1.JSON `json:"outsideNetwork,omitempty"`
 }
 
 type ConsulService struct {
-	ServiceName string     `json:"serviceName"`
-	Site        *ObjectRef `json:"site,omitempty"`
+	ServiceName    string                `json:"serviceName"`
+	Site           *ObjectRef            `json:"site,omitempty"`
+	VirtualSite    *ObjectRef            `json:"virtualSite,omitempty"`
+	InsideNetwork  *apiextensionsv1.JSON `json:"insideNetwork,omitempty"`
+	OutsideNetwork *apiextensionsv1.JSON `json:"outsideNetwork,omitempty"`
 }
 
 type OriginServerDiscover struct {

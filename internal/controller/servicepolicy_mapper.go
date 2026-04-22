@@ -34,9 +34,7 @@ func buildServicePolicyDesiredSpecJSON(cr *v1alpha1.ServicePolicy, xcNamespace s
 }
 
 func mapServicePolicySpec(spec *v1alpha1.ServicePolicySpec) xcclient.ServicePolicySpec {
-	out := xcclient.ServicePolicySpec{
-		Algo: spec.Algo,
-	}
+	var out xcclient.ServicePolicySpec
 
 	// Rule choice OneOf
 	if spec.AllowAllRequests != nil {
@@ -59,9 +57,7 @@ func mapServicePolicySpec(spec *v1alpha1.ServicePolicySpec) xcclient.ServicePoli
 	if spec.AnyServer != nil {
 		out.AnyServer = json.RawMessage(spec.AnyServer.Raw)
 	}
-	if spec.ServerName != nil {
-		out.ServerName = json.RawMessage(spec.ServerName.Raw)
-	}
+	out.ServerName = spec.ServerName
 	if spec.ServerNameMatcher != nil {
 		out.ServerNameMatcher = json.RawMessage(spec.ServerNameMatcher.Raw)
 	}

@@ -72,9 +72,24 @@ spec:
                   properties:
                     consulService:
                       properties:
+                        insideNetwork:
+                          x-kubernetes-preserve-unknown-fields: true
+                        outsideNetwork:
+                          x-kubernetes-preserve-unknown-fields: true
                         serviceName:
                           type: string
                         site:
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                            tenant:
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        virtualSite:
                           properties:
                             name:
                               type: string
@@ -112,6 +127,10 @@ spec:
                       type: object
                     k8sService:
                       properties:
+                        insideNetwork:
+                          x-kubernetes-preserve-unknown-fields: true
+                        outsideNetwork:
+                          x-kubernetes-preserve-unknown-fields: true
                         serviceName:
                           type: string
                         serviceNamespace:
@@ -127,14 +146,40 @@ spec:
                           required:
                           - name
                           type: object
+                        virtualSite:
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                            tenant:
+                              type: string
+                          required:
+                          - name
+                          type: object
                       required:
                       - serviceName
                       type: object
                     privateIP:
                       properties:
+                        insideNetwork:
+                          x-kubernetes-preserve-unknown-fields: true
                         ip:
                           type: string
+                        outsideNetwork:
+                          x-kubernetes-preserve-unknown-fields: true
                         site:
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                            tenant:
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        virtualSite:
                           properties:
                             name:
                               type: string
@@ -152,7 +197,22 @@ spec:
                       properties:
                         dnsName:
                           type: string
+                        insideNetwork:
+                          x-kubernetes-preserve-unknown-fields: true
+                        outsideNetwork:
+                          x-kubernetes-preserve-unknown-fields: true
                         site:
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                            tenant:
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        virtualSite:
                           properties:
                             name:
                               type: string

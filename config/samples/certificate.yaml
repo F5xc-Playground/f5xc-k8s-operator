@@ -1,0 +1,8 @@
+apiVersion: xc.f5.com/v1alpha1
+kind: Certificate
+metadata:
+  name: demo-cert
+spec:
+  xcNamespace: default
+  secretRef:
+    name: my-tls-secret

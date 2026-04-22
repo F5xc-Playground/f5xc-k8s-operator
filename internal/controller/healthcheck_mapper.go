@@ -46,8 +46,8 @@ func mapHealthCheckSpec(spec *v1alpha1.HealthCheckSpec) xcclient.HealthCheckSpec
 
 	if spec.TCPHealthCheck != nil {
 		out.TCPHealthCheck = &xcclient.TCPHealthCheck{
-			Send:    spec.TCPHealthCheck.Send,
-			Receive: spec.TCPHealthCheck.Receive,
+			SendPayload:      spec.TCPHealthCheck.Send,
+			ExpectedResponse: spec.TCPHealthCheck.Receive,
 		}
 	}
 

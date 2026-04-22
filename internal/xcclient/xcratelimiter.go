@@ -7,12 +7,16 @@ import (
 	"net/http"
 )
 
-// XCRateLimiterSpec is the resource-specific payload for an F5 XC rate limiter.
-// This configures traffic rate limiting in XC (not our internal token bucket).
-type XCRateLimiterSpec struct {
-	Threshold       uint32 `json:"total_number,omitempty"`
+// RateLimitValue holds the rate limit parameters inside a limits[] array entry.
+type RateLimitValue struct {
+	TotalNumber     uint32 `json:"total_number,omitempty"`
 	Unit            string `json:"unit,omitempty"`
 	BurstMultiplier uint32 `json:"burst_multiplier,omitempty"`
+}
+
+// XCRateLimiterSpec is the resource-specific payload for an F5 XC rate limiter.
+type XCRateLimiterSpec struct {
+	Limits []RateLimitValue `json:"limits"`
 }
 
 // XCRateLimiterCreate is the request body for creating a new XC rate limiter.

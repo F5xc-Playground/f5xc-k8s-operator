@@ -11,6 +11,12 @@ import (
 // Origin server types (OneOf pattern — exactly one field is set per instance)
 // ---------------------------------------------------------------------------
 
+// SiteLocator wraps a site or virtual_site reference for the XC API.
+type SiteLocator struct {
+	Site        *ObjectRef `json:"site,omitempty"`
+	VirtualSite *ObjectRef `json:"virtual_site,omitempty"`
+}
+
 // PublicIP identifies an origin server by a public IP address.
 type PublicIP struct {
 	IP string `json:"ip"`
@@ -23,27 +29,35 @@ type PublicName struct {
 
 // PrivateIP identifies an origin server by a private IP address on a site.
 type PrivateIP struct {
-	IP   string     `json:"ip"`
-	Site *ObjectRef `json:"site,omitempty"`
+	IP             string          `json:"ip"`
+	SiteLocator    *SiteLocator    `json:"site_locator,omitempty"`
+	InsideNetwork  json.RawMessage `json:"inside_network,omitempty"`
+	OutsideNetwork json.RawMessage `json:"outside_network,omitempty"`
 }
 
 // PrivateName identifies an origin server by a private DNS name on a site.
 type PrivateName struct {
-	DNSName string     `json:"dns_name"`
-	Site    *ObjectRef `json:"site,omitempty"`
+	DNSName        string          `json:"dns_name"`
+	SiteLocator    *SiteLocator    `json:"site_locator,omitempty"`
+	InsideNetwork  json.RawMessage `json:"inside_network,omitempty"`
+	OutsideNetwork json.RawMessage `json:"outside_network,omitempty"`
 }
 
 // K8SService identifies an origin server by a Kubernetes service.
 type K8SService struct {
-	ServiceName      string     `json:"service_name"`
-	ServiceNamespace string     `json:"service_namespace,omitempty"`
-	Site             *ObjectRef `json:"site,omitempty"`
+	ServiceName      string          `json:"service_name"`
+	ServiceNamespace string          `json:"service_namespace,omitempty"`
+	SiteLocator      *SiteLocator    `json:"site_locator,omitempty"`
+	InsideNetwork    json.RawMessage `json:"inside_network,omitempty"`
+	OutsideNetwork   json.RawMessage `json:"outside_network,omitempty"`
 }
 
 // ConsulService identifies an origin server by a Consul service on a site.
 type ConsulService struct {
-	ServiceName string     `json:"service_name"`
-	Site        *ObjectRef `json:"site,omitempty"`
+	ServiceName    string          `json:"service_name"`
+	SiteLocator    *SiteLocator    `json:"site_locator,omitempty"`
+	InsideNetwork  json.RawMessage `json:"inside_network,omitempty"`
+	OutsideNetwork json.RawMessage `json:"outside_network,omitempty"`
 }
 
 // OriginServer describes a single upstream endpoint. Exactly one of the

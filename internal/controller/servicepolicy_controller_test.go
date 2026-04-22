@@ -105,7 +105,6 @@ func sampleServicePolicy(name, namespace string) *v1alpha1.ServicePolicy {
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: v1alpha1.ServicePolicySpec{
 			XCNamespace:      namespace,
-			Algo:             "FIRST_MATCH",
 			AllowAllRequests: &apiextensionsv1.JSON{Raw: []byte("{}")},
 			AnyServer:        &apiextensionsv1.JSON{Raw: []byte("{}")},
 		},

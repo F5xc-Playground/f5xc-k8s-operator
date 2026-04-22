@@ -31,8 +31,8 @@ type HTTPHealthCheck struct {
 
 // TCPHealthCheck configures a TCP-based health check probe.
 type TCPHealthCheck struct {
-	Send    string `json:"send,omitempty"`
-	Receive string `json:"receive,omitempty"`
+	SendPayload      string `json:"send_payload,omitempty"`
+	ExpectedResponse string `json:"expected_response,omitempty"`
 }
 
 // CreateHealthCheck is the request body for creating a new health check.

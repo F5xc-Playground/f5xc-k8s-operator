@@ -29,13 +29,13 @@ spec:
       weight: 1
 ```
 
-### With TLS passthrough
+### With auto-cert TLS
 
 ```yaml
 apiVersion: xc.f5.com/v1alpha1
 kind: TCPLoadBalancer
 metadata:
-  name: tls-passthrough-lb
+  name: tls-auto-cert-lb
 spec:
   xcNamespace: my-namespace
   domains:
@@ -45,7 +45,8 @@ spec:
     - pool:
         name: my-origin-pool
       weight: 1
-  tlsPassthrough: {}
+  tlsTCPAutoCert:
+    no_mtls: {}
   advertiseOnPublicDefaultVIP: {}
 ```
 
@@ -68,7 +69,7 @@ spec:
 |-------|-------------|
 | `noTLS` | `{}` for plain TCP |
 | `tlsParameters` | TLS termination with certificate config |
-| `tlsPassthrough` | `{}` to pass TLS through to the backend |
+| `tlsTCPAutoCert` | Auto-managed TLS certificate config |
 
 ### Advertisement (choose one)
 

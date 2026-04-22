@@ -15,7 +15,6 @@ func sampleServicePolicyCreate(name, ns string) *ServicePolicyCreate {
 	return &ServicePolicyCreate{
 		Metadata: ObjectMeta{Name: name, Namespace: ns},
 		Spec: ServicePolicySpec{
-			Algo:             "FIRST_MATCH",
 			AllowAllRequests: json.RawMessage(`{}`),
 			AnyServer:        json.RawMessage(`{}`),
 		},

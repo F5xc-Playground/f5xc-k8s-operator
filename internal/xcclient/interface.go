@@ -60,6 +60,13 @@ type XCClient interface {
 	DeleteRateLimiter(ctx context.Context, ns, name string) error
 	ListRateLimiters(ctx context.Context, ns string) ([]*XCRateLimiter, error)
 
+	// Certificate
+	CreateCertificate(ctx context.Context, ns string, cert *CertificateCreate) (*Certificate, error)
+	GetCertificate(ctx context.Context, ns, name string) (*Certificate, error)
+	ReplaceCertificate(ctx context.Context, ns, name string, cert *CertificateReplace) (*Certificate, error)
+	DeleteCertificate(ctx context.Context, ns, name string) error
+	ListCertificates(ctx context.Context, ns string) ([]*Certificate, error)
+
 	// Diff helper
 	ClientNeedsUpdate(current, desired json.RawMessage) (bool, error)
 }

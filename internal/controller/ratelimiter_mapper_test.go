@@ -22,9 +22,10 @@ func TestBuildRateLimiterCreate_BasicFields(t *testing.T) {
 	result := buildRateLimiterCreate(cr, "default")
 	assert.Equal(t, "my-rl", result.Metadata.Name)
 	assert.Equal(t, "default", result.Metadata.Namespace)
-	assert.Equal(t, uint32(100), result.Spec.Threshold)
-	assert.Equal(t, "MINUTE", result.Spec.Unit)
-	assert.Equal(t, uint32(0), result.Spec.BurstMultiplier)
+	require.Len(t, result.Spec.Limits, 1)
+	assert.Equal(t, uint32(100), result.Spec.Limits[0].TotalNumber)
+	assert.Equal(t, "MINUTE", result.Spec.Limits[0].Unit)
+	assert.Equal(t, uint32(0), result.Spec.Limits[0].BurstMultiplier)
 }
 
 func TestBuildRateLimiterCreate_WithBurstMultiplier(t *testing.T) {
@@ -38,9 +39,10 @@ func TestBuildRateLimiterCreate_WithBurstMultiplier(t *testing.T) {
 	}
 
 	result := buildRateLimiterCreate(cr, "ns")
-	assert.Equal(t, uint32(50), result.Spec.Threshold)
-	assert.Equal(t, "SECOND", result.Spec.Unit)
-	assert.Equal(t, uint32(3), result.Spec.BurstMultiplier)
+	require.Len(t, result.Spec.Limits, 1)
+	assert.Equal(t, uint32(50), result.Spec.Limits[0].TotalNumber)
+	assert.Equal(t, "SECOND", result.Spec.Limits[0].Unit)
+	assert.Equal(t, uint32(3), result.Spec.Limits[0].BurstMultiplier)
 }
 
 func TestBuildRateLimiterReplace_IncludesResourceVersion(t *testing.T) {
@@ -54,7 +56,8 @@ func TestBuildRateLimiterReplace_IncludesResourceVersion(t *testing.T) {
 
 	result := buildRateLimiterReplace(cr, "ns", "rv-5")
 	assert.Equal(t, "rv-5", result.Metadata.ResourceVersion)
-	assert.Equal(t, uint32(100), result.Spec.Threshold)
+	require.Len(t, result.Spec.Limits, 1)
+	assert.Equal(t, uint32(100), result.Spec.Limits[0].TotalNumber)
 }
 
 func TestBuildRateLimiterCreate_XCNamespaceOverride(t *testing.T) {
@@ -84,10 +87,8 @@ func TestBuildRateLimiterDesiredSpecJSON(t *testing.T) {
 
 	var spec map[string]json.RawMessage
 	require.NoError(t, json.Unmarshal(raw, &spec))
-	_, hasTotalNumber := spec["total_number"]
-	_, hasUnit := spec["unit"]
-	assert.True(t, hasTotalNumber)
-	assert.True(t, hasUnit)
+	_, hasLimits := spec["limits"]
+	assert.True(t, hasLimits)
 	_, hasMetadata := spec["metadata"]
 	assert.False(t, hasMetadata, "spec JSON must not contain metadata")
 }

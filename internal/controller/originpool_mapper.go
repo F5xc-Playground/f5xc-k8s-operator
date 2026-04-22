@@ -3,6 +3,8 @@ package controller
 import (
 	"encoding/json"
 
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
 	"github.com/kreynolds/f5xc-k8s-operator/internal/xcclient"
 )
@@ -81,32 +83,58 @@ func mapOriginServer(s *v1alpha1.OriginServer) xcclient.OriginServer {
 		out.PublicName = &xcclient.PublicName{DNSName: s.PublicName.DNSName}
 	}
 	if s.PrivateIP != nil {
-		out.PrivateIP = &xcclient.PrivateIP{
-			IP:   s.PrivateIP.IP,
-			Site: mapObjectRefPtr(s.PrivateIP.Site),
-		}
+		p := &xcclient.PrivateIP{IP: s.PrivateIP.IP}
+		p.SiteLocator = mapSiteLocator(s.PrivateIP.Site, s.PrivateIP.VirtualSite)
+		p.InsideNetwork, p.OutsideNetwork = mapNetworkChoice(s.PrivateIP.InsideNetwork, s.PrivateIP.OutsideNetwork)
+		out.PrivateIP = p
 	}
 	if s.PrivateName != nil {
-		out.PrivateName = &xcclient.PrivateName{
-			DNSName: s.PrivateName.DNSName,
-			Site:    mapObjectRefPtr(s.PrivateName.Site),
-		}
+		p := &xcclient.PrivateName{DNSName: s.PrivateName.DNSName}
+		p.SiteLocator = mapSiteLocator(s.PrivateName.Site, s.PrivateName.VirtualSite)
+		p.InsideNetwork, p.OutsideNetwork = mapNetworkChoice(s.PrivateName.InsideNetwork, s.PrivateName.OutsideNetwork)
+		out.PrivateName = p
 	}
 	if s.K8SService != nil {
-		out.K8SService = &xcclient.K8SService{
+		k := &xcclient.K8SService{
 			ServiceName:      s.K8SService.ServiceName,
 			ServiceNamespace: s.K8SService.ServiceNamespace,
-			Site:             mapObjectRefPtr(s.K8SService.Site),
 		}
+		k.SiteLocator = mapSiteLocator(s.K8SService.Site, s.K8SService.VirtualSite)
+		k.InsideNetwork, k.OutsideNetwork = mapNetworkChoice(s.K8SService.InsideNetwork, s.K8SService.OutsideNetwork)
+		out.K8SService = k
 	}
 	if s.ConsulService != nil {
-		out.ConsulService = &xcclient.ConsulService{
-			ServiceName: s.ConsulService.ServiceName,
-			Site:        mapObjectRefPtr(s.ConsulService.Site),
-		}
+		c := &xcclient.ConsulService{ServiceName: s.ConsulService.ServiceName}
+		c.SiteLocator = mapSiteLocator(s.ConsulService.Site, s.ConsulService.VirtualSite)
+		c.InsideNetwork, c.OutsideNetwork = mapNetworkChoice(s.ConsulService.InsideNetwork, s.ConsulService.OutsideNetwork)
+		out.ConsulService = c
 	}
 
 	return out
+}
+
+func mapSiteLocator(site, virtualSite *v1alpha1.ObjectRef) *xcclient.SiteLocator {
+	if site == nil && virtualSite == nil {
+		return nil
+	}
+	sl := &xcclient.SiteLocator{}
+	if site != nil {
+		sl.Site = mapObjectRefPtr(site)
+	}
+	if virtualSite != nil {
+		sl.VirtualSite = mapObjectRefPtr(virtualSite)
+	}
+	return sl
+}
+
+func mapNetworkChoice(inside, outside *apiextensionsv1.JSON) (json.RawMessage, json.RawMessage) {
+	if inside != nil {
+		return json.RawMessage(inside.Raw), nil
+	}
+	if outside != nil {
+		return nil, json.RawMessage(outside.Raw)
+	}
+	return nil, nil
 }
 
 func mapObjectRef(ref *v1alpha1.ObjectRef) xcclient.ObjectRef {

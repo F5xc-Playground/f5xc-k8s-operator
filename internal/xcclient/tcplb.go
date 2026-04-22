@@ -18,14 +18,14 @@ type RoutePool struct {
 // TCPLoadBalancerSpec is the resource-specific payload for an F5 XC TCP load
 // balancer.
 type TCPLoadBalancerSpec struct {
-	Domains     []string    `json:"domains,omitempty"`
-	ListenPort  uint32      `json:"listen_port,omitempty"`
-	OriginPools []RoutePool `json:"origin_pools,omitempty"`
+	Domains           []string    `json:"domains,omitempty"`
+	ListenPort        uint32      `json:"listen_port,omitempty"`
+	OriginPoolWeights []RoutePool `json:"origin_pools_weights,omitempty"`
 
-	// TLS — OneOf: no_tls, tls_parameters, tls_tcp_passthrough
-	NoTLS          json.RawMessage `json:"no_tls,omitempty"`
-	TLSParameters  json.RawMessage `json:"tls_parameters,omitempty"`
-	TLSPassthrough json.RawMessage `json:"tls_tcp_passthrough,omitempty"`
+	// TLS — OneOf: tcp, tls_tcp, tls_tcp_auto_cert
+	TCP            json.RawMessage `json:"tcp,omitempty"`
+	TLSTCP         json.RawMessage `json:"tls_tcp,omitempty"`
+	TLSTCPAutoCert json.RawMessage `json:"tls_tcp_auto_cert,omitempty"`
 
 	// Advertise — OneOf: advertise_on_public_default_vip, advertise_on_public,
 	// advertise_custom, do_not_advertise

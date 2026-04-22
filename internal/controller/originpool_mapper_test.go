@@ -57,11 +57,18 @@ func TestBuildOriginPoolCreate_AllOriginServerTypes(t *testing.T) {
 	assert.Equal(t, "1.1.1.1", result.Spec.OriginServers[0].PublicIP.IP)
 	assert.Equal(t, "example.com", result.Spec.OriginServers[1].PublicName.DNSName)
 	assert.Equal(t, "10.0.0.1", result.Spec.OriginServers[2].PrivateIP.IP)
-	assert.Equal(t, "site1", result.Spec.OriginServers[2].PrivateIP.Site.Name)
+	require.NotNil(t, result.Spec.OriginServers[2].PrivateIP.SiteLocator)
+	assert.Equal(t, "site1", result.Spec.OriginServers[2].PrivateIP.SiteLocator.Site.Name)
 	assert.Equal(t, "internal.local", result.Spec.OriginServers[3].PrivateName.DNSName)
+	require.NotNil(t, result.Spec.OriginServers[3].PrivateName.SiteLocator)
+	assert.Equal(t, "site2", result.Spec.OriginServers[3].PrivateName.SiteLocator.Site.Name)
 	assert.Equal(t, "my-svc", result.Spec.OriginServers[4].K8SService.ServiceName)
 	assert.Equal(t, "kube-system", result.Spec.OriginServers[4].K8SService.ServiceNamespace)
+	require.NotNil(t, result.Spec.OriginServers[4].K8SService.SiteLocator)
+	assert.Equal(t, "site3", result.Spec.OriginServers[4].K8SService.SiteLocator.Site.Name)
 	assert.Equal(t, "consul-svc", result.Spec.OriginServers[5].ConsulService.ServiceName)
+	require.NotNil(t, result.Spec.OriginServers[5].ConsulService.SiteLocator)
+	assert.Equal(t, "site4", result.Spec.OriginServers[5].ConsulService.SiteLocator.Site.Name)
 }
 
 func TestBuildOriginPoolCreate_HealthChecks(t *testing.T) {
