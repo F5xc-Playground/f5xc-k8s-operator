@@ -20,7 +20,7 @@ func sampleOriginPoolCreate(name string) *xcclient.OriginPoolCreate {
 				{PublicIP: &xcclient.PublicIP{IP: "1.2.3.4"}},
 			},
 			Port:                  443,
-			LoadBalancerAlgorithm: "LB_OVERRIDE_ALGO_ROUND_ROBIN",
+			LoadBalancerAlgorithm: "ROUND_ROBIN",
 		},
 	}
 }

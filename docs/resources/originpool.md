@@ -124,7 +124,7 @@ spec:
 | `xcNamespace` | string | Yes | F5 XC namespace |
 | `port` | int | Yes | Port for all origin servers |
 | `originServers` | list | Yes | List of origin server definitions (see below) |
-| `loadBalancerAlgorithm` | string | No | Algorithm: `ROUND_ROBIN`, `LEAST_ACTIVE`, `RANDOM`, etc. |
+| `loadBalancerAlgorithm` | string | No | Algorithm: `ROUND_ROBIN`, `LEAST_REQUEST`, `RANDOM`, `RING_HASH` |
 | `healthChecks` | list of ObjectRef | No | References to HealthCheck CRs |
 | `useTLS` | object | No | TLS config (OneOf with `noTLS`) |
 | `noTLS` | object | No | Explicit no-TLS (OneOf with `useTLS`) |

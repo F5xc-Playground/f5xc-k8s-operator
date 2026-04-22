@@ -83,7 +83,7 @@ func TestContract_OriginPool_CRUD(t *testing.T) {
 				{PublicIP: &PublicIP{IP: "1.2.3.4"}},
 			},
 			Port:                  443,
-			LoadBalancerAlgorithm: "LB_OVERRIDE_ALGO_ROUND_ROBIN",
+			LoadBalancerAlgorithm: "ROUND_ROBIN",
 		},
 	})
 	require.NoError(t, err, "CreateOriginPool")
@@ -110,7 +110,7 @@ func TestContract_OriginPool_CRUD(t *testing.T) {
 				{PublicIP: &PublicIP{IP: "5.6.7.8"}},
 			},
 			Port:                  8080,
-			LoadBalancerAlgorithm: "LB_OVERRIDE_ALGO_ROUND_ROBIN",
+			LoadBalancerAlgorithm: "ROUND_ROBIN",
 		},
 	})
 	require.NoError(t, err, "ReplaceOriginPool")
@@ -282,7 +282,7 @@ func TestContract_OriginPool_MultipleOriginsWithAlgorithm(t *testing.T) {
 				{PublicIP: &PublicIP{IP: "5.6.7.8"}},
 			},
 			Port:                  8080,
-			LoadBalancerAlgorithm: "LB_OVERRIDE_ALGO_LEAST_ACTIVE",
+			LoadBalancerAlgorithm: "LEAST_REQUEST",
 		},
 	})
 	require.NoError(t, err)
@@ -339,11 +339,13 @@ func TestContract_HealthCheck_TCP(t *testing.T) {
 		Metadata: ObjectMeta{Name: name},
 		Spec: HealthCheckSpec{
 			TCPHealthCheck: &TCPHealthCheck{
-				SendPayload:      "PING",
-				ExpectedResponse: "PONG",
+				SendPayload:      "50494e47",
+				ExpectedResponse: "504f4e47",
 			},
-			Interval: 10,
-			Timeout:  3,
+			HealthyThreshold:   2,
+			UnhealthyThreshold: 2,
+			Interval:           10,
+			Timeout:            3,
 		},
 	})
 	require.NoError(t, err)
@@ -354,8 +356,8 @@ func TestContract_HealthCheck_TCP(t *testing.T) {
 	spec, err := got.ParseSpec()
 	require.NoError(t, err)
 	require.NotNil(t, spec.TCPHealthCheck)
-	assert.Equal(t, "PING", spec.TCPHealthCheck.SendPayload)
-	assert.Equal(t, "PONG", spec.TCPHealthCheck.ExpectedResponse)
+	assert.Equal(t, "50494e47", spec.TCPHealthCheck.SendPayload)
+	assert.Equal(t, "504f4e47", spec.TCPHealthCheck.ExpectedResponse)
 
 	require.NoError(t, c.DeleteHealthCheck(ctx, ns, name))
 }
@@ -530,7 +532,7 @@ func TestContract_RateLimiter_CRUD(t *testing.T) {
 	created, err := c.CreateRateLimiter(ctx, ns, XCRateLimiterCreate{
 		Metadata: ObjectMeta{Name: name},
 		Spec: XCRateLimiterSpec{
-			Limits: []RateLimitValue{{TotalNumber: 100, Unit: "MINUTE"}},
+			Limits: []RateLimitValue{{TotalNumber: 100, Unit: "MINUTE", BurstMultiplier: 1}},
 		},
 	})
 	require.NoError(t, err)
@@ -547,7 +549,7 @@ func TestContract_RateLimiter_CRUD(t *testing.T) {
 	_, err = c.ReplaceRateLimiter(ctx, ns, name, XCRateLimiterReplace{
 		Metadata: ObjectMeta{Name: name, ResourceVersion: resourceVersion},
 		Spec: XCRateLimiterSpec{
-			Limits: []RateLimitValue{{TotalNumber: 200, Unit: "SECOND"}},
+			Limits: []RateLimitValue{{TotalNumber: 200, Unit: "SECOND", BurstMultiplier: 2}},
 		},
 	})
 	require.NoError(t, err)
@@ -599,6 +601,27 @@ func TestContract_RateLimiter_WithBurst(t *testing.T) {
 	require.NoError(t, c.DeleteRateLimiter(ctx, ns, name))
 }
 
+// ensurePrerequisiteOriginPool creates a minimal origin pool that LB tests can
+// reference, and registers a cleanup function to delete it when the test ends.
+func ensurePrerequisiteOriginPool(t *testing.T, c *Client, ns string) {
+	t.Helper()
+	const poolName = "contract-test-origin-pool"
+	_ = c.DeleteOriginPool(context.Background(), ns, poolName)
+	_, err := c.CreateOriginPool(context.Background(), ns, &OriginPoolCreate{
+		Metadata: ObjectMeta{Name: poolName},
+		Spec: OriginPoolSpec{
+			OriginServers: []OriginServer{
+				{PublicIP: &PublicIP{IP: "1.2.3.4"}},
+			},
+			Port: 443,
+		},
+	})
+	require.NoError(t, err, "creating prerequisite origin pool")
+	t.Cleanup(func() {
+		_ = c.DeleteOriginPool(context.Background(), ns, poolName)
+	})
+}
+
 // ---------------------------------------------------------------------------
 // TCPLoadBalancer — full CRUD and variations
 // ---------------------------------------------------------------------------
@@ -607,6 +630,7 @@ func TestContract_TCPLoadBalancer_CRUD(t *testing.T) {
 	c := contractClient(t)
 	ns := contractNamespace(t)
 	ctx := context.Background()
+	ensurePrerequisiteOriginPool(t, c, ns)
 
 	const name = "contract-test-tlb"
 	_ = c.DeleteTCPLoadBalancer(ctx, ns, name)
@@ -669,6 +693,7 @@ func TestContract_TCPLoadBalancer_DoNotAdvertise(t *testing.T) {
 	c := contractClient(t)
 	ns := contractNamespace(t)
 	ctx := context.Background()
+	ensurePrerequisiteOriginPool(t, c, ns)
 
 	const name = "contract-test-tlb-noadv"
 	_ = c.DeleteTCPLoadBalancer(ctx, ns, name)
@@ -701,6 +726,7 @@ func TestContract_HTTPLoadBalancer_CRUD(t *testing.T) {
 	c := contractClient(t)
 	ns := contractNamespace(t)
 	ctx := context.Background()
+	ensurePrerequisiteOriginPool(t, c, ns)
 
 	const name = "contract-test-hlb"
 	_ = c.DeleteHTTPLoadBalancer(ctx, ns, name)
@@ -712,7 +738,7 @@ func TestContract_HTTPLoadBalancer_CRUD(t *testing.T) {
 			DefaultRoutePools: []RoutePool{
 				{Pool: ObjectRef{Name: "contract-test-origin-pool", Namespace: ns}, Weight: 1},
 			},
-			HTTP:                       json.RawMessage(`{"dns_volterra_managed":true}`),
+			HTTP:                       json.RawMessage(`{"dns_volterra_managed":false,"port":80}`),
 			AdvertiseOnPublicDefaultVIP: json.RawMessage(`{}`),
 		},
 	})
@@ -733,7 +759,7 @@ func TestContract_HTTPLoadBalancer_CRUD(t *testing.T) {
 			DefaultRoutePools: []RoutePool{
 				{Pool: ObjectRef{Name: "contract-test-origin-pool", Namespace: ns}, Weight: 1},
 			},
-			HTTP:                       json.RawMessage(`{"dns_volterra_managed":true}`),
+			HTTP:                       json.RawMessage(`{"dns_volterra_managed":false,"port":80}`),
 			AdvertiseOnPublicDefaultVIP: json.RawMessage(`{}`),
 		},
 	})
@@ -763,6 +789,7 @@ func TestContract_HTTPLoadBalancer_HTTPSAutoCert(t *testing.T) {
 	c := contractClient(t)
 	ns := contractNamespace(t)
 	ctx := context.Background()
+	ensurePrerequisiteOriginPool(t, c, ns)
 
 	const name = "contract-test-hlb-autocert"
 	_ = c.DeleteHTTPLoadBalancer(ctx, ns, name)
@@ -770,7 +797,7 @@ func TestContract_HTTPLoadBalancer_HTTPSAutoCert(t *testing.T) {
 	_, err := c.CreateHTTPLoadBalancer(ctx, ns, &HTTPLoadBalancerCreate{
 		Metadata: ObjectMeta{Name: name},
 		Spec: HTTPLoadBalancerSpec{
-			Domains: []string{"autocert.contract.test"},
+			Domains: []string{"autocert-contract-test.example.com"},
 			DefaultRoutePools: []RoutePool{
 				{Pool: ObjectRef{Name: "contract-test-origin-pool", Namespace: ns}, Weight: 1},
 			},
@@ -791,6 +818,7 @@ func TestContract_HTTPLoadBalancer_WithDisableOptions(t *testing.T) {
 	c := contractClient(t)
 	ns := contractNamespace(t)
 	ctx := context.Background()
+	ensurePrerequisiteOriginPool(t, c, ns)
 
 	const name = "contract-test-hlb-disabled"
 	_ = c.DeleteHTTPLoadBalancer(ctx, ns, name)
@@ -802,7 +830,7 @@ func TestContract_HTTPLoadBalancer_WithDisableOptions(t *testing.T) {
 			DefaultRoutePools: []RoutePool{
 				{Pool: ObjectRef{Name: "contract-test-origin-pool", Namespace: ns}, Weight: 1},
 			},
-			HTTP:                       json.RawMessage(`{"dns_volterra_managed":true}`),
+			HTTP:                       json.RawMessage(`{"dns_volterra_managed":false,"port":80}`),
 			AdvertiseOnPublicDefaultVIP: json.RawMessage(`{}`),
 			DisableWAF:                 json.RawMessage(`{}`),
 			DisableBotDefense:          json.RawMessage(`{}`),
