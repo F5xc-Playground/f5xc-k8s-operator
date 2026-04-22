@@ -7,7 +7,6 @@ import (
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -20,7 +19,7 @@ func sampleHTTPLoadBalancer(name, namespace string) *v1alpha1.HTTPLoadBalancer {
 			DefaultRoutePools: []v1alpha1.RoutePool{
 				{Pool: v1alpha1.ObjectRef{Name: "pool1"}, Weight: uint32Ptr(1)},
 			},
-			AdvertiseOnPublicDefaultVIP: &apiextensionsv1.JSON{Raw: []byte("{}")},
+			AdvertiseOnPublicDefaultVIP: &v1alpha1.EmptyObject{},
 		},
 	}
 }
@@ -50,27 +49,76 @@ func TestBuildHTTPLoadBalancerCreate_AppFirewallObjectRef(t *testing.T) {
 }
 
 func TestBuildHTTPLoadBalancerCreate_TLSOneOf(t *testing.T) {
-	httpsJSON := json.RawMessage(`{"tls_cert_params":{}}`)
 	cr := sampleHTTPLoadBalancer("hlb-tls", "ns")
-	cr.Spec.HTTPS = &apiextensionsv1.JSON{Raw: httpsJSON}
-
+	cr.Spec.HTTPS = &v1alpha1.HTTPSConfig{
+		HTTPRedirect:    true,
+		AddHSTS:         true,
+		DefaultSecurity: &v1alpha1.EmptyObject{},
+		NoMTLS:          &v1alpha1.EmptyObject{},
+		Port:            443,
+	}
 	result := buildHTTPLoadBalancerCreate(cr, "ns")
-
-	assert.JSONEq(t, `{"tls_cert_params":{}}`, string(result.Spec.HTTPS))
-	assert.Nil(t, result.Spec.HTTP)
-	assert.Nil(t, result.Spec.HTTPSAutoCert)
+	assert.NotNil(t, result.Spec.HTTPS)
+	var https map[string]interface{}
+	require.NoError(t, json.Unmarshal(result.Spec.HTTPS, &https))
+	assert.Equal(t, true, https["http_redirect"])
+	assert.Equal(t, true, https["add_hsts"])
 }
 
 func TestBuildHTTPLoadBalancerCreate_AdvertiseOneOf(t *testing.T) {
 	cr := sampleHTTPLoadBalancer("hlb-adv", "ns")
-	// sampleHTTPLoadBalancer sets AdvertiseOnPublicDefaultVIP already
-
 	result := buildHTTPLoadBalancerCreate(cr, "ns")
-
 	assert.JSONEq(t, `{}`, string(result.Spec.AdvertiseOnPublicDefaultVIP))
 	assert.Nil(t, result.Spec.AdvertiseOnPublic)
 	assert.Nil(t, result.Spec.AdvertiseCustom)
 	assert.Nil(t, result.Spec.DoNotAdvertise)
+}
+
+func TestBuildHTTPLoadBalancerCreate_HTTP(t *testing.T) {
+	cr := sampleHTTPLoadBalancer("hlb-http", "ns")
+	cr.Spec.HTTP = &v1alpha1.HTTPConfig{DNSVolterraManaged: false, Port: 80}
+	result := buildHTTPLoadBalancerCreate(cr, "ns")
+	assert.JSONEq(t, `{"port":80}`, string(result.Spec.HTTP))
+}
+
+func TestBuildHTTPLoadBalancerCreate_CookieStickiness(t *testing.T) {
+	cr := sampleHTTPLoadBalancer("hlb-cookie", "ns")
+	cr.Spec.CookieStickiness = &v1alpha1.CookieStickinessConfig{Name: "session", Path: "/", TTL: 3600}
+	result := buildHTTPLoadBalancerCreate(cr, "ns")
+	assert.JSONEq(t, `{"name":"session","path":"/","ttl":3600}`, string(result.Spec.CookieStickiness))
+}
+
+func TestBuildHTTPLoadBalancerCreate_DisableOptions(t *testing.T) {
+	cr := sampleHTTPLoadBalancer("hlb-disabled", "ns")
+	cr.Spec.DisableWAF = &v1alpha1.EmptyObject{}
+	cr.Spec.DisableBotDefense = &v1alpha1.EmptyObject{}
+	cr.Spec.DisableAPIDiscovery = &v1alpha1.EmptyObject{}
+	cr.Spec.NoChallenge = &v1alpha1.EmptyObject{}
+	cr.Spec.RoundRobin = &v1alpha1.EmptyObject{}
+	cr.Spec.NoServicePolicies = &v1alpha1.EmptyObject{}
+	result := buildHTTPLoadBalancerCreate(cr, "ns")
+	assert.JSONEq(t, `{}`, string(result.Spec.DisableWAF))
+	assert.JSONEq(t, `{}`, string(result.Spec.DisableBotDefense))
+	assert.JSONEq(t, `{}`, string(result.Spec.DisableAPIDiscovery))
+	assert.JSONEq(t, `{}`, string(result.Spec.NoChallenge))
+	assert.JSONEq(t, `{}`, string(result.Spec.RoundRobin))
+	assert.JSONEq(t, `{}`, string(result.Spec.NoServicePolicies))
+}
+
+func TestBuildHTTPLoadBalancerCreate_ActiveServicePolicies(t *testing.T) {
+	cr := sampleHTTPLoadBalancer("hlb-sp", "ns")
+	cr.Spec.ActiveServicePolicies = &v1alpha1.ActiveServicePoliciesConfig{
+		Policies: []v1alpha1.ObjectRef{{Name: "policy1", Namespace: "ns"}},
+	}
+	result := buildHTTPLoadBalancerCreate(cr, "ns")
+	assert.JSONEq(t, `{"policies":[{"name":"policy1","namespace":"ns"}]}`, string(result.Spec.ActiveServicePolicies))
+}
+
+func TestBuildHTTPLoadBalancerCreate_UserIDClientIP(t *testing.T) {
+	cr := sampleHTTPLoadBalancer("hlb-uid", "ns")
+	cr.Spec.UserIDClientIP = &v1alpha1.EmptyObject{}
+	result := buildHTTPLoadBalancerCreate(cr, "ns")
+	assert.JSONEq(t, `{}`, string(result.Spec.UserIDClientIP))
 }
 
 func TestBuildHTTPLoadBalancerReplace_IncludesResourceVersion(t *testing.T) {

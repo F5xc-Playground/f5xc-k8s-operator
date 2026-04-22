@@ -38,61 +38,58 @@ type HTTPLoadBalancerSpec struct {
 	DefaultRoutePools []RoutePool            `json:"defaultRoutePools"`
 	Routes            []apiextensionsv1.JSON `json:"routes,omitempty"`
 
-	// TLS OneOf: http, https, httpsAutoCert
-	HTTP          *apiextensionsv1.JSON `json:"http,omitempty"`
-	HTTPS         *apiextensionsv1.JSON `json:"https,omitempty"`
-	HTTPSAutoCert *apiextensionsv1.JSON `json:"httpsAutoCert,omitempty"`
+	// TLS OneOf
+	HTTP          *HTTPConfig          `json:"http,omitempty"`
+	HTTPS         *HTTPSConfig         `json:"https,omitempty"`
+	HTTPSAutoCert *HTTPSAutoCertConfig `json:"httpsAutoCert,omitempty"`
 
-	// WAF OneOf: disableWAF, appFirewall
-	DisableWAF  *apiextensionsv1.JSON `json:"disableWAF,omitempty"`
-	AppFirewall *ObjectRef            `json:"appFirewall,omitempty"`
+	// WAF OneOf
+	DisableWAF  *EmptyObject `json:"disableWAF,omitempty"`
+	AppFirewall *ObjectRef   `json:"appFirewall,omitempty"`
 
-	// Bot defense OneOf: disableBotDefense, botDefense
-	DisableBotDefense *apiextensionsv1.JSON `json:"disableBotDefense,omitempty"`
-	BotDefense        *apiextensionsv1.JSON `json:"botDefense,omitempty"`
+	// Bot defense OneOf
+	DisableBotDefense *EmptyObject      `json:"disableBotDefense,omitempty"`
+	BotDefense        *BotDefenseConfig `json:"botDefense,omitempty"`
 
-	// API discovery OneOf: disableAPIDiscovery, enableAPIDiscovery
-	DisableAPIDiscovery *apiextensionsv1.JSON `json:"disableAPIDiscovery,omitempty"`
-	EnableAPIDiscovery  *apiextensionsv1.JSON `json:"enableAPIDiscovery,omitempty"`
+	// API discovery OneOf
+	DisableAPIDiscovery *EmptyObject              `json:"disableAPIDiscovery,omitempty"`
+	EnableAPIDiscovery  *EnableAPIDiscoveryConfig `json:"enableAPIDiscovery,omitempty"`
 
-	// IP reputation OneOf: disableIPReputation, enableIPReputation
-	DisableIPReputation *apiextensionsv1.JSON `json:"disableIPReputation,omitempty"`
-	EnableIPReputation  *apiextensionsv1.JSON `json:"enableIPReputation,omitempty"`
+	// IP reputation OneOf
+	DisableIPReputation *EmptyObject              `json:"disableIPReputation,omitempty"`
+	EnableIPReputation  *EnableIPReputationConfig `json:"enableIPReputation,omitempty"`
 
-	// Rate limit OneOf: disableRateLimit, rateLimit
-	DisableRateLimit *apiextensionsv1.JSON `json:"disableRateLimit,omitempty"`
-	RateLimit        *apiextensionsv1.JSON `json:"rateLimit,omitempty"`
+	// Rate limit OneOf
+	DisableRateLimit *EmptyObject     `json:"disableRateLimit,omitempty"`
+	RateLimit        *RateLimitConfig `json:"rateLimit,omitempty"`
 
-	// Challenge OneOf: noChallenge, jsChallenge, captchaChallenge, policyBasedChallenge
-	NoChallenge          *apiextensionsv1.JSON `json:"noChallenge,omitempty"`
-	JSChallenge          *apiextensionsv1.JSON `json:"jsChallenge,omitempty"`
-	CaptchaChallenge     *apiextensionsv1.JSON `json:"captchaChallenge,omitempty"`
-	PolicyBasedChallenge *apiextensionsv1.JSON `json:"policyBasedChallenge,omitempty"`
+	// Challenge OneOf
+	NoChallenge          *EmptyObject                `json:"noChallenge,omitempty"`
+	JSChallenge          *JSChallengeConfig          `json:"jsChallenge,omitempty"`
+	CaptchaChallenge     *CaptchaChallengeConfig     `json:"captchaChallenge,omitempty"`
+	PolicyBasedChallenge *PolicyBasedChallengeConfig `json:"policyBasedChallenge,omitempty"`
 
-	// LB algorithm OneOf: roundRobin, leastActive, random, sourceIPStickiness,
-	// cookieStickiness, ringHash
-	RoundRobin         *apiextensionsv1.JSON `json:"roundRobin,omitempty"`
-	LeastActive        *apiextensionsv1.JSON `json:"leastActive,omitempty"`
-	Random             *apiextensionsv1.JSON `json:"random,omitempty"`
-	SourceIPStickiness *apiextensionsv1.JSON `json:"sourceIPStickiness,omitempty"`
-	CookieStickiness   *apiextensionsv1.JSON `json:"cookieStickiness,omitempty"`
-	RingHash           *apiextensionsv1.JSON `json:"ringHash,omitempty"`
+	// LB algorithm OneOf
+	RoundRobin         *EmptyObject            `json:"roundRobin,omitempty"`
+	LeastActive        *EmptyObject            `json:"leastActive,omitempty"`
+	Random             *EmptyObject            `json:"random,omitempty"`
+	SourceIPStickiness *EmptyObject            `json:"sourceIPStickiness,omitempty"`
+	CookieStickiness   *CookieStickinessConfig `json:"cookieStickiness,omitempty"`
+	RingHash           *RingHashConfig         `json:"ringHash,omitempty"`
 
-	// Advertise OneOf: advertiseOnPublicDefaultVIP, advertiseOnPublic,
-	// advertiseCustom, doNotAdvertise
-	AdvertiseOnPublicDefaultVIP *apiextensionsv1.JSON `json:"advertiseOnPublicDefaultVIP,omitempty"`
-	AdvertiseOnPublic           *apiextensionsv1.JSON `json:"advertiseOnPublic,omitempty"`
-	AdvertiseCustom             *apiextensionsv1.JSON `json:"advertiseCustom,omitempty"`
-	DoNotAdvertise              *apiextensionsv1.JSON `json:"doNotAdvertise,omitempty"`
+	// Advertise OneOf
+	AdvertiseOnPublicDefaultVIP *EmptyObject       `json:"advertiseOnPublicDefaultVIP,omitempty"`
+	AdvertiseOnPublic           *AdvertiseOnPublic `json:"advertiseOnPublic,omitempty"`
+	AdvertiseCustom             *AdvertiseCustom   `json:"advertiseCustom,omitempty"`
+	DoNotAdvertise              *EmptyObject       `json:"doNotAdvertise,omitempty"`
 
-	// Service policies OneOf: servicePoliciesFromNamespace, activeServicePolicies,
-	// noServicePolicies
-	ServicePoliciesFromNamespace *apiextensionsv1.JSON `json:"servicePoliciesFromNamespace,omitempty"`
-	ActiveServicePolicies        *apiextensionsv1.JSON `json:"activeServicePolicies,omitempty"`
-	NoServicePolicies            *apiextensionsv1.JSON `json:"noServicePolicies,omitempty"`
+	// Service policies OneOf
+	ServicePoliciesFromNamespace *EmptyObject                 `json:"servicePoliciesFromNamespace,omitempty"`
+	ActiveServicePolicies        *ActiveServicePoliciesConfig `json:"activeServicePolicies,omitempty"`
+	NoServicePolicies            *EmptyObject                 `json:"noServicePolicies,omitempty"`
 
-	// User ID OneOf: userIDClientIP
-	UserIDClientIP *apiextensionsv1.JSON `json:"userIDClientIP,omitempty"`
+	// User ID OneOf
+	UserIDClientIP *EmptyObject `json:"userIDClientIP,omitempty"`
 }
 
 // HTTPLoadBalancerStatus defines the observed state of HTTPLoadBalancer.
@@ -102,6 +99,203 @@ type HTTPLoadBalancerStatus struct {
 	XCResourceVersion  string             `json:"xcResourceVersion,omitempty"`
 	XCUID              string             `json:"xcUID,omitempty"`
 	XCNamespace        string             `json:"xcNamespace,omitempty"`
+}
+
+// HTTPConfig configures plain HTTP on the load balancer.
+type HTTPConfig struct {
+	DNSVolterraManaged bool   `json:"dnsVolterraManaged,omitempty"`
+	Port               uint32 `json:"port,omitempty"`
+}
+
+// HTTPSConfig configures HTTPS with explicit certificates.
+type HTTPSConfig struct {
+	HTTPRedirect    bool                `json:"httpRedirect,omitempty"`
+	AddHSTS         bool                `json:"addHSTS,omitempty"`
+	TLSCertificates []TLSCertificateRef `json:"tlsCertificates,omitempty"`
+	DefaultSecurity *EmptyObject        `json:"defaultSecurity,omitempty"`
+	LowSecurity     *EmptyObject        `json:"lowSecurity,omitempty"`
+	MediumSecurity  *EmptyObject        `json:"mediumSecurity,omitempty"`
+	CustomSecurity  *CustomTLSSecurity  `json:"customSecurity,omitempty"`
+	NoMTLS          *EmptyObject        `json:"noMTLS,omitempty"`
+	UseMTLS         *UseMTLS            `json:"useMTLS,omitempty"`
+	Port            uint32              `json:"port,omitempty"`
+}
+
+// HTTPSAutoCertConfig configures HTTPS with auto-managed certificates.
+type HTTPSAutoCertConfig struct {
+	HTTPRedirect bool         `json:"httpRedirect,omitempty"`
+	AddHSTS      bool         `json:"addHSTS,omitempty"`
+	NoMTLS       *EmptyObject `json:"noMTLS,omitempty"`
+	UseMTLS      *UseMTLS     `json:"useMTLS,omitempty"`
+	Port         uint32       `json:"port,omitempty"`
+}
+
+// BotDefenseConfig configures bot defense.
+type BotDefenseConfig struct {
+	RegionalEndpoint string            `json:"regionalEndpoint,omitempty"`
+	Policy           *BotDefensePolicy `json:"policy,omitempty"`
+	Timeout          uint32            `json:"timeout,omitempty"`
+}
+
+// BotDefensePolicy holds the bot defense policy.
+type BotDefensePolicy struct {
+	ProtectedAppEndpoints []ProtectedAppEndpoint `json:"protectedAppEndpoints,omitempty"`
+	JSInsertionRules      *JSInsertionRules      `json:"jsInsertionRules,omitempty"`
+	JsDownloadPath        string                 `json:"jsDownloadPath,omitempty"`
+	DisableMobileSDK      *EmptyObject           `json:"disableMobileSDK,omitempty"`
+}
+
+// ProtectedAppEndpoint defines a protected application endpoint for bot defense.
+type ProtectedAppEndpoint struct {
+	Metadata         map[string]string `json:"metadata,omitempty"`
+	HTTPMethods      []string          `json:"httpMethods,omitempty"`
+	Path             PathMatcher       `json:"path"`
+	Flow             string            `json:"flow,omitempty"`
+	Protocol         string            `json:"protocol,omitempty"`
+	AnyDomain        *EmptyObject      `json:"anyDomain,omitempty"`
+	Domain           string            `json:"domain,omitempty"`
+	MitigationAction *apiextensionsv1.JSON `json:"mitigationAction,omitempty"`
+}
+
+// JSInsertionRules holds JS insertion rules for bot defense.
+type JSInsertionRules struct {
+	Rules []JSInsertionRule `json:"rules,omitempty"`
+}
+
+// JSInsertionRule defines a single JS insertion rule.
+type JSInsertionRule struct {
+	ExcludedPaths []PathMatcher `json:"excludedPaths,omitempty"`
+}
+
+// EnableAPIDiscoveryConfig configures API discovery.
+type EnableAPIDiscoveryConfig struct {
+	EnableLearnFromRedirectTraffic  *EmptyObject                 `json:"enableLearnFromRedirectTraffic,omitempty"`
+	DisableLearnFromRedirectTraffic *EmptyObject                 `json:"disableLearnFromRedirectTraffic,omitempty"`
+	DefaultAPIAuthDiscovery         *EmptyObject                 `json:"defaultAPIAuthDiscovery,omitempty"`
+	APICrawler                      *ObjectRef                   `json:"apiCrawler,omitempty"`
+	APIDiscoveryFromCodeScan        *ObjectRef                   `json:"apiDiscoveryFromCodeScan,omitempty"`
+	DiscoveredAPISettings           *DiscoveredAPISettings       `json:"discoveredAPISettings,omitempty"`
+	SensitiveDataDetectionRules     *SensitiveDataDetectionRules `json:"sensitiveDataDetectionRules,omitempty"`
+}
+
+// DiscoveredAPISettings configures discovered API settings.
+type DiscoveredAPISettings struct {
+	PurgeByDurationDays uint32 `json:"purgeByDurationDays,omitempty"`
+}
+
+// SensitiveDataDetectionRules holds sensitive data detection rules.
+type SensitiveDataDetectionRules struct {
+	SensitiveDataTypes []SensitiveDataType `json:"sensitiveDataTypes,omitempty"`
+}
+
+// SensitiveDataType identifies a sensitive data type.
+type SensitiveDataType struct {
+	Type string `json:"type"`
+}
+
+// EnableIPReputationConfig configures IP reputation filtering.
+type EnableIPReputationConfig struct {
+	IPThreatCategories []string `json:"ipThreatCategories,omitempty"`
+}
+
+// RateLimitConfig configures rate limiting.
+type RateLimitConfig struct {
+	RateLimiter     *RateLimiterInline `json:"rateLimiter,omitempty"`
+	NoIPAllowedList *EmptyObject       `json:"noIPAllowedList,omitempty"`
+	IPAllowedList   []ObjectRef        `json:"ipAllowedList,omitempty"`
+	NoPolicies      *EmptyObject       `json:"noPolicies,omitempty"`
+	Policies        *RateLimitPolicies `json:"policies,omitempty"`
+}
+
+// RateLimiterInline defines an inline rate limiter.
+type RateLimiterInline struct {
+	TotalNumber     uint32 `json:"totalNumber"`
+	Unit            string `json:"unit"`
+	BurstMultiplier uint32 `json:"burstMultiplier"`
+}
+
+// RateLimitPolicies holds a list of rate limit policy references.
+type RateLimitPolicies struct {
+	Policies []ObjectRef `json:"policies,omitempty"`
+}
+
+// JSChallengeConfig configures a JavaScript challenge.
+type JSChallengeConfig struct {
+	JSScriptDelay uint32 `json:"jsScriptDelay,omitempty"`
+	CookieExpiry  uint32 `json:"cookieExpiry,omitempty"`
+	CustomPage    string `json:"customPage,omitempty"`
+}
+
+// CaptchaChallengeConfig configures a CAPTCHA challenge.
+type CaptchaChallengeConfig struct {
+	Expiry     uint32 `json:"expiry,omitempty"`
+	CustomPage string `json:"customPage,omitempty"`
+}
+
+// PolicyBasedChallengeConfig configures policy-based challenges.
+type PolicyBasedChallengeConfig struct {
+	DefaultJSChallengeParameters      *JSChallengeConfig      `json:"defaultJSChallengeParameters,omitempty"`
+	DefaultCaptchaChallengeParameters *CaptchaChallengeConfig `json:"defaultCaptchaChallengeParameters,omitempty"`
+	DefaultMitigationSettings        *EmptyObject            `json:"defaultMitigationSettings,omitempty"`
+	AlwaysEnableJSChallenge          *EmptyObject            `json:"alwaysEnableJSChallenge,omitempty"`
+	AlwaysEnableCaptcha              *EmptyObject            `json:"alwaysEnableCaptcha,omitempty"`
+	NoChallenge                      *EmptyObject            `json:"noChallenge,omitempty"`
+	MaliciousUserMitigationBypass    *EmptyObject            `json:"maliciousUserMitigationBypass,omitempty"`
+	RuleList                         *ChallengeRuleList      `json:"ruleList,omitempty"`
+	TemporaryBlockingParameters      *TemporaryBlockingParams `json:"temporaryBlockingParameters,omitempty"`
+}
+
+// ChallengeRuleList holds a list of challenge rules.
+type ChallengeRuleList struct {
+	Rules []ChallengeRule `json:"rules,omitempty"`
+}
+
+// ChallengeRule defines a single challenge rule.
+type ChallengeRule struct {
+	Metadata map[string]string  `json:"metadata,omitempty"`
+	Spec     *ChallengeRuleSpec `json:"spec,omitempty"`
+}
+
+// ChallengeRuleSpec defines the spec of a challenge rule.
+type ChallengeRuleSpec struct {
+	ChallengeAction string `json:"challengeAction,omitempty"`
+}
+
+// TemporaryBlockingParams configures temporary blocking parameters.
+type TemporaryBlockingParams struct {
+	Duration uint32 `json:"duration,omitempty"`
+}
+
+// CookieStickinessConfig configures cookie-based sticky sessions.
+type CookieStickinessConfig struct {
+	Name string `json:"name,omitempty"`
+	Path string `json:"path,omitempty"`
+	TTL  uint32 `json:"ttl,omitempty"`
+}
+
+// RingHashConfig configures ring-hash load balancing.
+type RingHashConfig struct {
+	HashPolicy []HashPolicy `json:"hashPolicy,omitempty"`
+}
+
+// HashPolicy defines a single hash policy entry for ring-hash LB.
+type HashPolicy struct {
+	HeaderName string            `json:"headerName,omitempty"`
+	Cookie     *CookieForHashing `json:"cookie,omitempty"`
+	SourceIP   *EmptyObject      `json:"sourceIP,omitempty"`
+	Terminal   bool              `json:"terminal,omitempty"`
+}
+
+// CookieForHashing identifies a cookie used for ring-hash load balancing.
+type CookieForHashing struct {
+	Name string `json:"name"`
+	TTL  uint32 `json:"ttl,omitempty"`
+	Path string `json:"path,omitempty"`
+}
+
+// ActiveServicePoliciesConfig holds the active service policies list.
+type ActiveServicePoliciesConfig struct {
+	Policies []ObjectRef `json:"policies"`
 }
 
 func init() {
