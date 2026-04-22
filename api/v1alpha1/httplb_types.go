@@ -89,7 +89,16 @@ type HTTPLoadBalancerSpec struct {
 	NoServicePolicies            *EmptyObject                 `json:"noServicePolicies,omitempty"`
 
 	// User ID OneOf
-	UserIDClientIP *EmptyObject `json:"userIDClientIP,omitempty"`
+	UserIDClientIP     *EmptyObject `json:"userIDClientIP,omitempty"`
+	UserIdentification *ObjectRef   `json:"userIdentification,omitempty"`
+
+	// API definition OneOf
+	DisableAPIDefinition *EmptyObject           `json:"disableAPIDefinition,omitempty"`
+	APISpecification     *APISpecificationConfig `json:"apiSpecification,omitempty"`
+
+	// Malicious user detection OneOf
+	DisableMaliciousUserDetection *EmptyObject `json:"disableMaliciousUserDetection,omitempty"`
+	EnableMaliciousUserDetection  *EmptyObject `json:"enableMaliciousUserDetection,omitempty"`
 }
 
 // HTTPLoadBalancerStatus defines the observed state of HTTPLoadBalancer.
@@ -241,6 +250,7 @@ type PolicyBasedChallengeConfig struct {
 	AlwaysEnableCaptcha              *EmptyObject            `json:"alwaysEnableCaptcha,omitempty"`
 	NoChallenge                      *EmptyObject            `json:"noChallenge,omitempty"`
 	MaliciousUserMitigationBypass    *EmptyObject            `json:"maliciousUserMitigationBypass,omitempty"`
+	MaliciousUserMitigation          *ObjectRef              `json:"maliciousUserMitigation,omitempty"`
 	RuleList                         *ChallengeRuleList      `json:"ruleList,omitempty"`
 	TemporaryBlockingParameters      *TemporaryBlockingParams `json:"temporaryBlockingParameters,omitempty"`
 }
@@ -296,6 +306,19 @@ type CookieForHashing struct {
 // ActiveServicePoliciesConfig holds the active service policies list.
 type ActiveServicePoliciesConfig struct {
 	Policies []ObjectRef `json:"policies"`
+}
+
+// APISpecificationConfig wraps an APIDefinition reference with validation settings.
+type APISpecificationConfig struct {
+	APIDefinition              *ObjectRef            `json:"apiDefinition"`
+	ValidationDisabled         *EmptyObject          `json:"validationDisabled,omitempty"`
+	ValidationAllSpecEndpoints *EmptyObject          `json:"validationAllSpecEndpoints,omitempty"`
+	ValidationCustomList       *ValidationCustomList `json:"validationCustomList,omitempty"`
+}
+
+// ValidationCustomList holds a custom list of endpoint validations.
+type ValidationCustomList struct {
+	EndpointValidationList []APIOperation `json:"endpointValidationList,omitempty"`
 }
 
 func init() {

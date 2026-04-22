@@ -67,8 +67,17 @@ type HTTPLoadBalancerSpec struct {
 	ActiveServicePolicies        json.RawMessage `json:"active_service_policies,omitempty"`
 	NoServicePolicies            json.RawMessage `json:"no_service_policies,omitempty"`
 
-	// User ID — OneOf: user_id_client_ip
-	UserIDClientIP json.RawMessage `json:"user_id_client_ip,omitempty"`
+	// User ID — OneOf: user_id_client_ip, user_identification
+	UserIDClientIP     json.RawMessage `json:"user_id_client_ip,omitempty"`
+	UserIdentification *ObjectRef      `json:"user_identification,omitempty"`
+
+	// API definition — OneOf: disable_api_definition, api_specification
+	DisableAPIDefinition json.RawMessage `json:"disable_api_definition,omitempty"`
+	APISpecification     json.RawMessage `json:"api_specification,omitempty"`
+
+	// Malicious user detection — OneOf: disable/enable
+	DisableMaliciousUserDetection json.RawMessage `json:"disable_malicious_user_detection,omitempty"`
+	EnableMaliciousUserDetection  json.RawMessage `json:"enable_malicious_user_detection,omitempty"`
 }
 
 // HTTPLoadBalancerCreate is the request body for creating a new HTTP load
