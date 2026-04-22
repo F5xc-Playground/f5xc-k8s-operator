@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -40,9 +39,14 @@ type CertificateSpec struct {
 
 	// OCSP stapling choice — all optional; omitting defaults to disabled at the API level.
 	// OneOf: CustomHashAlgorithms | DisableOcspStapling | UseSystemDefaults
-	CustomHashAlgorithms *apiextensionsv1.JSON `json:"customHashAlgorithms,omitempty"`
-	DisableOcspStapling  *apiextensionsv1.JSON `json:"disableOcspStapling,omitempty"`
-	UseSystemDefaults    *apiextensionsv1.JSON `json:"useSystemDefaults,omitempty"`
+	CustomHashAlgorithms *CustomHashAlgorithms `json:"customHashAlgorithms,omitempty"`
+	DisableOcspStapling  *EmptyObject          `json:"disableOcspStapling,omitempty"`
+	UseSystemDefaults    *EmptyObject          `json:"useSystemDefaults,omitempty"`
+}
+
+// CustomHashAlgorithms specifies a list of hash algorithms for certificate OCSP stapling.
+type CustomHashAlgorithms struct {
+	HashAlgorithms []string `json:"hashAlgorithms"`
 }
 
 type SecretRef struct {

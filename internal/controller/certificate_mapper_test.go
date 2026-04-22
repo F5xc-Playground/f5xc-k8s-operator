@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
@@ -50,7 +49,7 @@ func TestBuildCertificateCreate_OCSPFields(t *testing.T) {
 		Spec: v1alpha1.CertificateSpec{
 			XCNamespace:         "ns",
 			SecretRef:           v1alpha1.SecretRef{Name: "tls"},
-			DisableOcspStapling: &apiextensionsv1.JSON{Raw: []byte(`{}`)},
+			DisableOcspStapling: &v1alpha1.EmptyObject{},
 		},
 	}
 
@@ -96,4 +95,21 @@ func TestBuildCertificateDesiredSpecJSON(t *testing.T) {
 	assert.True(t, hasCertURL)
 	_, hasMetadata := spec["metadata"]
 	assert.False(t, hasMetadata, "spec JSON must not contain metadata")
+}
+
+func TestBuildCertificateCreate_CustomHashAlgorithms(t *testing.T) {
+	cr := &v1alpha1.Certificate{
+		ObjectMeta: metav1.ObjectMeta{Name: "cert-hash", Namespace: "ns"},
+		Spec: v1alpha1.CertificateSpec{
+			XCNamespace: "ns",
+			SecretRef:   v1alpha1.SecretRef{Name: "tls"},
+			CustomHashAlgorithms: &v1alpha1.CustomHashAlgorithms{
+				HashAlgorithms: []string{"SHA256", "SHA384"},
+			},
+		},
+	}
+	result := buildCertificateCreate(cr, "ns", testCertPEM, testKeyPEM)
+	assert.JSONEq(t, `{"hash_algorithms":["SHA256","SHA384"]}`, string(result.Spec.CustomHashAlgorithms))
+	assert.Nil(t, result.Spec.DisableOcspStapling)
+	assert.Nil(t, result.Spec.UseSystemDefaults)
 }

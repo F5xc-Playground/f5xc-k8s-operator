@@ -47,13 +47,15 @@ func mapCertificateSpec(spec *v1alpha1.CertificateSpec, certPEM, keyPEM []byte) 
 	}
 
 	if spec.CustomHashAlgorithms != nil {
-		out.CustomHashAlgorithms = json.RawMessage(spec.CustomHashAlgorithms.Raw)
+		out.CustomHashAlgorithms = marshalJSON(struct {
+			HashAlgorithms []string `json:"hash_algorithms"`
+		}{HashAlgorithms: spec.CustomHashAlgorithms.HashAlgorithms})
 	}
 	if spec.DisableOcspStapling != nil {
-		out.DisableOcspStapling = json.RawMessage(spec.DisableOcspStapling.Raw)
+		out.DisableOcspStapling = emptyObjectJSON
 	}
 	if spec.UseSystemDefaults != nil {
-		out.UseSystemDefaults = json.RawMessage(spec.UseSystemDefaults.Raw)
+		out.UseSystemDefaults = emptyObjectJSON
 	}
 
 	return out
