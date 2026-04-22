@@ -4,6 +4,13 @@ package controller
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"math/big"
 	"os"
 	"testing"
 	"time"
@@ -481,5 +488,695 @@ func TestContract_HTTPLoadBalancerCRDLifecycle(t *testing.T) {
 	}
 
 	_, err = xcClient.GetHTTPLoadBalancer(context.Background(), xcNS, "contract-hlb")
+	assert.ErrorIs(t, err, xcclient.ErrNotFound)
+}
+
+// ---------------------------------------------------------------------------
+// Helper
+// ---------------------------------------------------------------------------
+
+func contractGenerateTestCert(t *testing.T) (certPEM, keyPEM []byte) {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+	tmpl := &x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject:      pkix.Name{CommonName: "contract-test.example.com"},
+		NotBefore:    time.Now().Add(-time.Hour),
+		NotAfter:     time.Now().Add(24 * time.Hour),
+	}
+	certDER, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
+	require.NoError(t, err)
+	certPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	keyDER, err := x509.MarshalECPrivateKey(key)
+	require.NoError(t, err)
+	keyPEM = pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
+	return
+}
+
+// ---------------------------------------------------------------------------
+// Certificate — full lifecycle
+// ---------------------------------------------------------------------------
+
+func TestContract_CertificateCRDLifecycle(t *testing.T) {
+	xcClient := contractXCClient(t)
+	xcNS := contractNamespace(t)
+	setupSuite(t)
+	cs := xcclientset.New(xcClient)
+
+	reconciler := &CertificateReconciler{
+		Log:       ctrl.Log.WithName("contract"),
+		ClientSet: cs,
+	}
+	startManagerFor(t, func(mgr ctrl.Manager) error {
+		reconciler.Client = mgr.GetClient()
+		return reconciler.SetupWithManager(mgr)
+	})
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-cert"}}
+	require.NoError(t, testClient.Create(testCtx, ns))
+
+	_ = xcClient.DeleteCertificate(context.Background(), xcNS, "contract-cert")
+	time.Sleep(2 * time.Second)
+
+	certPEM, keyPEM := contractGenerateTestCert(t)
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: "contract-cert-tls", Namespace: "contract-cert"},
+		Type:       corev1.SecretTypeTLS,
+		Data: map[string][]byte{
+			"tls.crt": certPEM,
+			"tls.key": keyPEM,
+		},
+	}
+	require.NoError(t, testClient.Create(testCtx, secret))
+
+	cr := &v1alpha1.Certificate{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contract-cert",
+			Namespace: "contract-cert",
+		},
+		Spec: v1alpha1.CertificateSpec{
+			XCNamespace:         xcNS,
+			SecretRef:           v1alpha1.SecretRef{Name: "contract-cert-tls"},
+			DisableOcspStapling: &apiextensionsv1.JSON{Raw: []byte("{}")},
+		},
+	}
+	require.NoError(t, testClient.Create(testCtx, cr))
+
+	result := waitForCertificateConditionResult(t, types.NamespacedName{Name: "contract-cert", Namespace: "contract-cert"}, v1alpha1.ConditionReady, metav1.ConditionTrue, 30*time.Second)
+	require.NotNil(t, result)
+	assert.Contains(t, []string{v1alpha1.ReasonCreateSucceeded, v1alpha1.ReasonUpToDate}, meta.FindStatusCondition(result.Status.Conditions, v1alpha1.ConditionSynced).Reason)
+	assert.NotEmpty(t, result.Status.XCUID)
+
+	cert, err := xcClient.GetCertificate(context.Background(), xcNS, "contract-cert")
+	require.NoError(t, err)
+	assert.NotEmpty(t, cert.Spec.CertificateURL)
+
+	require.NoError(t, testClient.Delete(testCtx, cr))
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		_, err := xcClient.GetCertificate(context.Background(), xcNS, "contract-cert")
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	_, err = xcClient.GetCertificate(context.Background(), xcNS, "contract-cert")
+	assert.ErrorIs(t, err, xcclient.ErrNotFound)
+}
+
+// ---------------------------------------------------------------------------
+// OriginPool — field variations
+// ---------------------------------------------------------------------------
+
+func TestContract_OriginPoolCRDLifecycle_PublicName(t *testing.T) {
+	setupSuite(t)
+	xcClient := contractXCClient(t)
+	xcNS := contractNamespace(t)
+	cs := xcclientset.New(xcClient)
+
+	reconciler := &OriginPoolReconciler{
+		Log:       ctrl.Log.WithName("contract"),
+		ClientSet: cs,
+	}
+	startManager(t, reconciler)
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-op-pn"}}
+	require.NoError(t, testClient.Create(testCtx, ns))
+	_ = xcClient.DeleteOriginPool(context.Background(), xcNS, "contract-pool-pubname")
+	time.Sleep(2 * time.Second)
+
+	cr := &v1alpha1.OriginPool{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contract-pool-pubname",
+			Namespace: "contract-op-pn",
+		},
+		Spec: v1alpha1.OriginPoolSpec{
+			XCNamespace: xcNS,
+			OriginServers: []v1alpha1.OriginServer{
+				{PublicName: &v1alpha1.PublicName{DNSName: "backend.example.com"}},
+			},
+			Port: 443,
+		},
+	}
+	require.NoError(t, testClient.Create(testCtx, cr))
+
+	result := waitForConditionResult(t, types.NamespacedName{Name: "contract-pool-pubname", Namespace: "contract-op-pn"}, v1alpha1.ConditionReady, metav1.ConditionTrue, 30*time.Second)
+	assert.NotEmpty(t, result.Status.XCUID)
+
+	pool, err := xcClient.GetOriginPool(context.Background(), xcNS, "contract-pool-pubname")
+	require.NoError(t, err)
+	require.Len(t, pool.Spec.OriginServers, 1)
+	require.NotNil(t, pool.Spec.OriginServers[0].PublicName)
+	assert.Equal(t, "backend.example.com", pool.Spec.OriginServers[0].PublicName.DNSName)
+
+	require.NoError(t, testClient.Delete(testCtx, cr))
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		_, err := xcClient.GetOriginPool(context.Background(), xcNS, "contract-pool-pubname")
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	_, err = xcClient.GetOriginPool(context.Background(), xcNS, "contract-pool-pubname")
+	assert.ErrorIs(t, err, xcclient.ErrNotFound)
+}
+
+func TestContract_OriginPoolCRDLifecycle_MultiOriginWithAlgorithm(t *testing.T) {
+	setupSuite(t)
+	xcClient := contractXCClient(t)
+	xcNS := contractNamespace(t)
+	cs := xcclientset.New(xcClient)
+
+	reconciler := &OriginPoolReconciler{
+		Log:       ctrl.Log.WithName("contract"),
+		ClientSet: cs,
+	}
+	startManager(t, reconciler)
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-op-multi"}}
+	require.NoError(t, testClient.Create(testCtx, ns))
+	_ = xcClient.DeleteOriginPool(context.Background(), xcNS, "contract-pool-multi")
+	time.Sleep(2 * time.Second)
+
+	cr := &v1alpha1.OriginPool{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contract-pool-multi",
+			Namespace: "contract-op-multi",
+		},
+		Spec: v1alpha1.OriginPoolSpec{
+			XCNamespace: xcNS,
+			OriginServers: []v1alpha1.OriginServer{
+				{PublicIP: &v1alpha1.PublicIP{IP: "1.2.3.4"}},
+				{PublicName: &v1alpha1.PublicName{DNSName: "backend.example.com"}},
+				{PublicIP: &v1alpha1.PublicIP{IP: "5.6.7.8"}},
+			},
+			Port:                  8080,
+			LoadBalancerAlgorithm: "ROUND_ROBIN",
+		},
+	}
+	require.NoError(t, testClient.Create(testCtx, cr))
+
+	result := waitForConditionResult(t, types.NamespacedName{Name: "contract-pool-multi", Namespace: "contract-op-multi"}, v1alpha1.ConditionReady, metav1.ConditionTrue, 30*time.Second)
+	assert.NotEmpty(t, result.Status.XCUID)
+
+	pool, err := xcClient.GetOriginPool(context.Background(), xcNS, "contract-pool-multi")
+	require.NoError(t, err)
+	assert.Len(t, pool.Spec.OriginServers, 3)
+	assert.Equal(t, 8080, pool.Spec.Port)
+
+	require.NoError(t, testClient.Delete(testCtx, cr))
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		_, err := xcClient.GetOriginPool(context.Background(), xcNS, "contract-pool-multi")
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	_, err = xcClient.GetOriginPool(context.Background(), xcNS, "contract-pool-multi")
+	assert.ErrorIs(t, err, xcclient.ErrNotFound)
+}
+
+func TestContract_OriginPoolCRDLifecycle_NoTLS(t *testing.T) {
+	setupSuite(t)
+	xcClient := contractXCClient(t)
+	xcNS := contractNamespace(t)
+	cs := xcclientset.New(xcClient)
+
+	reconciler := &OriginPoolReconciler{
+		Log:       ctrl.Log.WithName("contract"),
+		ClientSet: cs,
+	}
+	startManager(t, reconciler)
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-op-notls"}}
+	require.NoError(t, testClient.Create(testCtx, ns))
+	_ = xcClient.DeleteOriginPool(context.Background(), xcNS, "contract-pool-notls")
+	time.Sleep(2 * time.Second)
+
+	cr := &v1alpha1.OriginPool{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contract-pool-notls",
+			Namespace: "contract-op-notls",
+		},
+		Spec: v1alpha1.OriginPoolSpec{
+			XCNamespace: xcNS,
+			OriginServers: []v1alpha1.OriginServer{
+				{PublicIP: &v1alpha1.PublicIP{IP: "10.0.0.1"}},
+			},
+			Port:  80,
+			NoTLS: &apiextensionsv1.JSON{Raw: []byte("{}")},
+		},
+	}
+	require.NoError(t, testClient.Create(testCtx, cr))
+
+	result := waitForConditionResult(t, types.NamespacedName{Name: "contract-pool-notls", Namespace: "contract-op-notls"}, v1alpha1.ConditionReady, metav1.ConditionTrue, 30*time.Second)
+	assert.NotEmpty(t, result.Status.XCUID)
+
+	require.NoError(t, testClient.Delete(testCtx, cr))
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		_, err := xcClient.GetOriginPool(context.Background(), xcNS, "contract-pool-notls")
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	_, err := xcClient.GetOriginPool(context.Background(), xcNS, "contract-pool-notls")
+	assert.ErrorIs(t, err, xcclient.ErrNotFound)
+}
+
+// ---------------------------------------------------------------------------
+// HealthCheck — field variations
+// ---------------------------------------------------------------------------
+
+func TestContract_HealthCheckCRDLifecycle_TCP(t *testing.T) {
+	xcClient := contractXCClient(t)
+	xcNS := contractNamespace(t)
+	setupSuite(t)
+	cs := xcclientset.New(xcClient)
+
+	reconciler := &HealthCheckReconciler{
+		Log:       ctrl.Log.WithName("contract"),
+		ClientSet: cs,
+	}
+	startManagerFor(t, func(mgr ctrl.Manager) error {
+		reconciler.Client = mgr.GetClient()
+		return reconciler.SetupWithManager(mgr)
+	})
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-hc-tcp"}}
+	require.NoError(t, testClient.Create(testCtx, ns))
+	_ = xcClient.DeleteHealthCheck(context.Background(), xcNS, "contract-hc-tcp")
+	time.Sleep(2 * time.Second)
+
+	cr := &v1alpha1.HealthCheck{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contract-hc-tcp",
+			Namespace: "contract-hc-tcp",
+		},
+		Spec: v1alpha1.HealthCheckSpec{
+			XCNamespace: xcNS,
+			TCPHealthCheck: &v1alpha1.TCPHealthCheckSpec{
+				Send:    "PING",
+				Receive: "PONG",
+			},
+		},
+	}
+	require.NoError(t, testClient.Create(testCtx, cr))
+
+	result := waitForHealthCheckConditionResult(t, types.NamespacedName{Name: "contract-hc-tcp", Namespace: "contract-hc-tcp"}, v1alpha1.ConditionReady, metav1.ConditionTrue, 30*time.Second)
+	require.NotNil(t, result)
+	assert.NotEmpty(t, result.Status.XCUID)
+
+	hc, err := xcClient.GetHealthCheck(context.Background(), xcNS, "contract-hc-tcp")
+	require.NoError(t, err)
+	spec, err := hc.ParseSpec()
+	require.NoError(t, err)
+	require.NotNil(t, spec.TCPHealthCheck)
+	assert.Equal(t, "PING", spec.TCPHealthCheck.SendPayload)
+	assert.Equal(t, "PONG", spec.TCPHealthCheck.ExpectedResponse)
+
+	require.NoError(t, testClient.Delete(testCtx, cr))
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		_, err := xcClient.GetHealthCheck(context.Background(), xcNS, "contract-hc-tcp")
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	_, err = xcClient.GetHealthCheck(context.Background(), xcNS, "contract-hc-tcp")
+	assert.ErrorIs(t, err, xcclient.ErrNotFound)
+}
+
+func TestContract_HealthCheckCRDLifecycle_WithThresholds(t *testing.T) {
+	xcClient := contractXCClient(t)
+	xcNS := contractNamespace(t)
+	setupSuite(t)
+	cs := xcclientset.New(xcClient)
+
+	reconciler := &HealthCheckReconciler{
+		Log:       ctrl.Log.WithName("contract"),
+		ClientSet: cs,
+	}
+	startManagerFor(t, func(mgr ctrl.Manager) error {
+		reconciler.Client = mgr.GetClient()
+		return reconciler.SetupWithManager(mgr)
+	})
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-hc-thr"}}
+	require.NoError(t, testClient.Create(testCtx, ns))
+	_ = xcClient.DeleteHealthCheck(context.Background(), xcNS, "contract-hc-thresholds")
+	time.Sleep(2 * time.Second)
+
+	cr := &v1alpha1.HealthCheck{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contract-hc-thresholds",
+			Namespace: "contract-hc-thr",
+		},
+		Spec: v1alpha1.HealthCheckSpec{
+			XCNamespace:        xcNS,
+			HTTPHealthCheck:    &v1alpha1.HTTPHealthCheckSpec{Path: "/ready"},
+			HealthyThreshold:   uint32Ptr(5),
+			UnhealthyThreshold: uint32Ptr(3),
+			Interval:           uint32Ptr(30),
+			Timeout:            uint32Ptr(10),
+			JitterPercent:      uint32Ptr(20),
+		},
+	}
+	require.NoError(t, testClient.Create(testCtx, cr))
+
+	result := waitForHealthCheckConditionResult(t, types.NamespacedName{Name: "contract-hc-thresholds", Namespace: "contract-hc-thr"}, v1alpha1.ConditionReady, metav1.ConditionTrue, 30*time.Second)
+	require.NotNil(t, result)
+	assert.NotEmpty(t, result.Status.XCUID)
+
+	hc, err := xcClient.GetHealthCheck(context.Background(), xcNS, "contract-hc-thresholds")
+	require.NoError(t, err)
+	spec, err := hc.ParseSpec()
+	require.NoError(t, err)
+	assert.Equal(t, uint32(5), spec.HealthyThreshold)
+	assert.Equal(t, uint32(3), spec.UnhealthyThreshold)
+	assert.Equal(t, uint32(30), spec.Interval)
+	assert.Equal(t, uint32(10), spec.Timeout)
+	assert.Equal(t, uint32(20), spec.JitterPercent)
+
+	require.NoError(t, testClient.Delete(testCtx, cr))
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		_, err := xcClient.GetHealthCheck(context.Background(), xcNS, "contract-hc-thresholds")
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	_, err = xcClient.GetHealthCheck(context.Background(), xcNS, "contract-hc-thresholds")
+	assert.ErrorIs(t, err, xcclient.ErrNotFound)
+}
+
+// ---------------------------------------------------------------------------
+// AppFirewall — blocking mode variation
+// ---------------------------------------------------------------------------
+
+func TestContract_AppFirewallCRDLifecycle_BlockingMode(t *testing.T) {
+	xcClient := contractXCClient(t)
+	xcNS := contractNamespace(t)
+	setupSuite(t)
+	cs := xcclientset.New(xcClient)
+
+	reconciler := &AppFirewallReconciler{
+		Log:       ctrl.Log.WithName("contract"),
+		ClientSet: cs,
+	}
+	startManagerFor(t, func(mgr ctrl.Manager) error {
+		reconciler.Client = mgr.GetClient()
+		return reconciler.SetupWithManager(mgr)
+	})
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-afw-blk"}}
+	require.NoError(t, testClient.Create(testCtx, ns))
+	_ = xcClient.DeleteAppFirewall(context.Background(), xcNS, "contract-afw-blocking")
+	time.Sleep(2 * time.Second)
+
+	cr := &v1alpha1.AppFirewall{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contract-afw-blocking",
+			Namespace: "contract-afw-blk",
+		},
+		Spec: v1alpha1.AppFirewallSpec{
+			XCNamespace:          xcNS,
+			Blocking:             &apiextensionsv1.JSON{Raw: []byte("{}")},
+			DisableAnonymization: &apiextensionsv1.JSON{Raw: []byte("{}")},
+		},
+	}
+	require.NoError(t, testClient.Create(testCtx, cr))
+
+	result := waitForAppFirewallConditionResult(t, types.NamespacedName{Name: "contract-afw-blocking", Namespace: "contract-afw-blk"}, v1alpha1.ConditionReady, metav1.ConditionTrue, 30*time.Second)
+	require.NotNil(t, result)
+	assert.NotEmpty(t, result.Status.XCUID)
+
+	obj, err := xcClient.GetAppFirewall(context.Background(), xcNS, "contract-afw-blocking")
+	require.NoError(t, err)
+	assert.NotNil(t, obj.Spec.Blocking)
+	assert.NotNil(t, obj.Spec.DisableAnonymization)
+
+	require.NoError(t, testClient.Delete(testCtx, cr))
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		_, err := xcClient.GetAppFirewall(context.Background(), xcNS, "contract-afw-blocking")
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	_, err = xcClient.GetAppFirewall(context.Background(), xcNS, "contract-afw-blocking")
+	assert.ErrorIs(t, err, xcclient.ErrNotFound)
+}
+
+// ---------------------------------------------------------------------------
+// RateLimiter — with burst multiplier
+// ---------------------------------------------------------------------------
+
+func TestContract_RateLimiterCRDLifecycle_WithBurst(t *testing.T) {
+	xcClient := contractXCClient(t)
+	xcNS := contractNamespace(t)
+	setupSuite(t)
+	cs := xcclientset.New(xcClient)
+
+	reconciler := &RateLimiterReconciler{
+		Log:       ctrl.Log.WithName("contract"),
+		ClientSet: cs,
+	}
+	startManagerFor(t, func(mgr ctrl.Manager) error {
+		reconciler.Client = mgr.GetClient()
+		return reconciler.SetupWithManager(mgr)
+	})
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-rl-burst"}}
+	require.NoError(t, testClient.Create(testCtx, ns))
+	_ = xcClient.DeleteRateLimiter(context.Background(), xcNS, "contract-rl-burst")
+	time.Sleep(2 * time.Second)
+
+	cr := &v1alpha1.RateLimiter{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contract-rl-burst",
+			Namespace: "contract-rl-burst",
+		},
+		Spec: v1alpha1.RateLimiterSpec{
+			XCNamespace:     xcNS,
+			Threshold:       50,
+			Unit:            "SECOND",
+			BurstMultiplier: uint32Ptr(3),
+		},
+	}
+	require.NoError(t, testClient.Create(testCtx, cr))
+
+	result := waitForRateLimiterConditionResult(t, types.NamespacedName{Name: "contract-rl-burst", Namespace: "contract-rl-burst"}, v1alpha1.ConditionReady, metav1.ConditionTrue, 30*time.Second)
+	require.NotNil(t, result)
+	assert.NotEmpty(t, result.Status.XCUID)
+
+	rl, err := xcClient.GetRateLimiter(context.Background(), xcNS, "contract-rl-burst")
+	require.NoError(t, err)
+	require.Len(t, rl.Spec.Limits, 1)
+	assert.Equal(t, uint32(50), rl.Spec.Limits[0].TotalNumber)
+	assert.Equal(t, uint32(3), rl.Spec.Limits[0].BurstMultiplier)
+
+	require.NoError(t, testClient.Delete(testCtx, cr))
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		_, err := xcClient.GetRateLimiter(context.Background(), xcNS, "contract-rl-burst")
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	_, err = xcClient.GetRateLimiter(context.Background(), xcNS, "contract-rl-burst")
+	assert.ErrorIs(t, err, xcclient.ErrNotFound)
+}
+
+// ---------------------------------------------------------------------------
+// ServicePolicy — deny_all with serverName
+// ---------------------------------------------------------------------------
+
+func TestContract_ServicePolicyCRDLifecycle_DenyAll(t *testing.T) {
+	xcClient := contractXCClient(t)
+	xcNS := contractNamespace(t)
+	setupSuite(t)
+	cs := xcclientset.New(xcClient)
+
+	reconciler := &ServicePolicyReconciler{
+		Log:       ctrl.Log.WithName("contract"),
+		ClientSet: cs,
+	}
+	startManagerFor(t, func(mgr ctrl.Manager) error {
+		reconciler.Client = mgr.GetClient()
+		return reconciler.SetupWithManager(mgr)
+	})
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-sp-deny"}}
+	require.NoError(t, testClient.Create(testCtx, ns))
+	_ = xcClient.DeleteServicePolicy(context.Background(), xcNS, "contract-sp-deny")
+	time.Sleep(2 * time.Second)
+
+	cr := &v1alpha1.ServicePolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contract-sp-deny",
+			Namespace: "contract-sp-deny",
+		},
+		Spec: v1alpha1.ServicePolicySpec{
+			XCNamespace:     xcNS,
+			DenyAllRequests: &apiextensionsv1.JSON{Raw: []byte("{}")},
+			ServerName:      "api.example.com",
+		},
+	}
+	require.NoError(t, testClient.Create(testCtx, cr))
+
+	result := waitForServicePolicyConditionResult(t, types.NamespacedName{Name: "contract-sp-deny", Namespace: "contract-sp-deny"}, v1alpha1.ConditionReady, metav1.ConditionTrue, 30*time.Second)
+	require.NotNil(t, result)
+	assert.NotEmpty(t, result.Status.XCUID)
+
+	sp, err := xcClient.GetServicePolicy(context.Background(), xcNS, "contract-sp-deny")
+	require.NoError(t, err)
+	assert.NotNil(t, sp.Spec.DenyAllRequests)
+	assert.Equal(t, "api.example.com", sp.Spec.ServerName)
+
+	require.NoError(t, testClient.Delete(testCtx, cr))
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		_, err := xcClient.GetServicePolicy(context.Background(), xcNS, "contract-sp-deny")
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	_, err = xcClient.GetServicePolicy(context.Background(), xcNS, "contract-sp-deny")
+	assert.ErrorIs(t, err, xcclient.ErrNotFound)
+}
+
+// ---------------------------------------------------------------------------
+// HTTPLoadBalancer — HTTPS auto-cert variation
+// ---------------------------------------------------------------------------
+
+func TestContract_HTTPLoadBalancerCRDLifecycle_HTTPSAutoCert(t *testing.T) {
+	xcClient := contractXCClient(t)
+	xcNS := contractNamespace(t)
+	setupSuite(t)
+	cs := xcclientset.New(xcClient)
+
+	reconciler := &HTTPLoadBalancerReconciler{
+		Log:       ctrl.Log.WithName("contract"),
+		ClientSet: cs,
+	}
+	startManagerFor(t, func(mgr ctrl.Manager) error {
+		reconciler.Client = mgr.GetClient()
+		return reconciler.SetupWithManager(mgr)
+	})
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-hlb-ac"}}
+	require.NoError(t, testClient.Create(testCtx, ns))
+	_ = xcClient.DeleteHTTPLoadBalancer(context.Background(), xcNS, "contract-hlb-autocert")
+	time.Sleep(2 * time.Second)
+
+	cr := &v1alpha1.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contract-hlb-autocert",
+			Namespace: "contract-hlb-ac",
+		},
+		Spec: v1alpha1.HTTPLoadBalancerSpec{
+			XCNamespace: xcNS,
+			Domains:     []string{"autocert.contract.test"},
+			HTTPSAutoCert: &apiextensionsv1.JSON{
+				Raw: []byte(`{"add_hsts":true,"http_redirect":true,"no_mtls":{}}`),
+			},
+			DefaultRoutePools: []v1alpha1.RoutePool{
+				{Pool: v1alpha1.ObjectRef{Name: "contract-pool"}, Weight: uint32Ptr(1)},
+			},
+			AdvertiseOnPublicDefaultVIP: &apiextensionsv1.JSON{Raw: []byte("{}")},
+		},
+	}
+	require.NoError(t, testClient.Create(testCtx, cr))
+
+	result := waitForHTTPLoadBalancerConditionResult(t, types.NamespacedName{Name: "contract-hlb-autocert", Namespace: "contract-hlb-ac"}, v1alpha1.ConditionReady, metav1.ConditionTrue, 30*time.Second)
+	require.NotNil(t, result)
+	assert.NotEmpty(t, result.Status.XCUID)
+
+	hlb, err := xcClient.GetHTTPLoadBalancer(context.Background(), xcNS, "contract-hlb-autocert")
+	require.NoError(t, err)
+	assert.NotNil(t, hlb.Spec.HTTPSAutoCert)
+
+	require.NoError(t, testClient.Delete(testCtx, cr))
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		_, err := xcClient.GetHTTPLoadBalancer(context.Background(), xcNS, "contract-hlb-autocert")
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	_, err = xcClient.GetHTTPLoadBalancer(context.Background(), xcNS, "contract-hlb-autocert")
+	assert.ErrorIs(t, err, xcclient.ErrNotFound)
+}
+
+// ---------------------------------------------------------------------------
+// TCPLoadBalancer — doNotAdvertise variation
+// ---------------------------------------------------------------------------
+
+func TestContract_TCPLoadBalancerCRDLifecycle_DoNotAdvertise(t *testing.T) {
+	xcClient := contractXCClient(t)
+	xcNS := contractNamespace(t)
+	setupSuite(t)
+	cs := xcclientset.New(xcClient)
+
+	reconciler := &TCPLoadBalancerReconciler{
+		Log:       ctrl.Log.WithName("contract"),
+		ClientSet: cs,
+	}
+	startManagerFor(t, func(mgr ctrl.Manager) error {
+		reconciler.Client = mgr.GetClient()
+		return reconciler.SetupWithManager(mgr)
+	})
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-tlb-noadv"}}
+	require.NoError(t, testClient.Create(testCtx, ns))
+	_ = xcClient.DeleteTCPLoadBalancer(context.Background(), xcNS, "contract-tlb-noadv")
+	time.Sleep(2 * time.Second)
+
+	cr := &v1alpha1.TCPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contract-tlb-noadv",
+			Namespace: "contract-tlb-noadv",
+		},
+		Spec: v1alpha1.TCPLoadBalancerSpec{
+			XCNamespace: xcNS,
+			Domains:     []string{"internal.contract.test"},
+			ListenPort:  8080,
+			OriginPools: []v1alpha1.RoutePool{
+				{Pool: v1alpha1.ObjectRef{Name: "contract-pool"}, Weight: uint32Ptr(1)},
+			},
+			DoNotAdvertise: &apiextensionsv1.JSON{Raw: []byte("{}")},
+		},
+	}
+	require.NoError(t, testClient.Create(testCtx, cr))
+
+	result := waitForTCPLoadBalancerConditionResult(t, types.NamespacedName{Name: "contract-tlb-noadv", Namespace: "contract-tlb-noadv"}, v1alpha1.ConditionReady, metav1.ConditionTrue, 30*time.Second)
+	require.NotNil(t, result)
+	assert.NotEmpty(t, result.Status.XCUID)
+
+	tlb, err := xcClient.GetTCPLoadBalancer(context.Background(), xcNS, "contract-tlb-noadv")
+	require.NoError(t, err)
+	assert.NotNil(t, tlb.Spec.DoNotAdvertise)
+
+	require.NoError(t, testClient.Delete(testCtx, cr))
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		_, err := xcClient.GetTCPLoadBalancer(context.Background(), xcNS, "contract-tlb-noadv")
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	_, err = xcClient.GetTCPLoadBalancer(context.Background(), xcNS, "contract-tlb-noadv")
 	assert.ErrorIs(t, err, xcclient.ErrNotFound)
 }
