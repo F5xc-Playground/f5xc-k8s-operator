@@ -18,7 +18,8 @@ go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 ```bash
 make test              # Unit and integration tests (requires envtest)
 make test-contract     # Contract tests against a live XC tenant
-make manifests         # Regenerate CRD and RBAC manifests
+make manifests         # Regenerate CRD/RBAC manifests and sync Helm chart
+make helm-sync         # Copy CRDs to Helm chart and bump chart version
 make generate          # Regenerate deepcopy methods
 make fmt               # Format Go source files
 make vet               # Run go vet
@@ -67,10 +68,9 @@ charts/
 
 1. Edit the type definition in `api/v1alpha1/`
 2. Run `make generate` to update deepcopy methods
-3. Run `make manifests` to regenerate CRD and RBAC YAML
-4. Copy the updated CRD to the Helm chart: `cp config/crd/bases/*.yaml charts/f5xc-k8s-operator/crds/`
-5. Update the mapper in `internal/controller/` if spec fields changed
-6. Update tests and run `make test`
+3. Run `make manifests` — this regenerates CRD/RBAC YAML, copies CRDs to the Helm chart, and bumps the chart version automatically
+4. Update the mapper in `internal/controller/` if spec fields changed
+5. Update tests and run `make test`
 
 ## Building the Container Image
 
