@@ -7,7 +7,6 @@ import (
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -91,8 +90,7 @@ func TestBuildOriginPoolCreate_HealthChecks(t *testing.T) {
 	assert.Equal(t, "ns", result.Spec.HealthCheck[0].Namespace)
 }
 
-func TestBuildOriginPoolCreate_TLSPassthrough(t *testing.T) {
-	tlsJSON := json.RawMessage(`{"tls_config":{"default_security":{}}}`)
+func TestBuildOriginPoolCreate_UseTLS(t *testing.T) {
 	cr := &v1alpha1.OriginPool{
 		ObjectMeta: metav1.ObjectMeta{Name: "tls-pool", Namespace: "ns"},
 		Spec: v1alpha1.OriginPoolSpec{
@@ -100,12 +98,51 @@ func TestBuildOriginPoolCreate_TLSPassthrough(t *testing.T) {
 			OriginServers: []v1alpha1.OriginServer{
 				{PublicIP: &v1alpha1.PublicIP{IP: "1.2.3.4"}},
 			},
-			UseTLS: &apiextensionsv1.JSON{Raw: tlsJSON},
+			UseTLS: &v1alpha1.OriginPoolTLS{
+				DefaultSecurity: &v1alpha1.EmptyObject{},
+			},
 		},
 	}
 
 	result := buildOriginPoolCreate(cr, "ns", nil)
 	assert.JSONEq(t, `{"tls_config":{"default_security":{}}}`, string(result.Spec.UseTLS))
+}
+
+func TestBuildOriginPoolCreate_NoTLS(t *testing.T) {
+	cr := &v1alpha1.OriginPool{
+		ObjectMeta: metav1.ObjectMeta{Name: "notls-pool", Namespace: "ns"},
+		Spec: v1alpha1.OriginPoolSpec{
+			Port: 80,
+			OriginServers: []v1alpha1.OriginServer{
+				{PublicIP: &v1alpha1.PublicIP{IP: "1.2.3.4"}},
+			},
+			NoTLS: &v1alpha1.EmptyObject{},
+		},
+	}
+
+	result := buildOriginPoolCreate(cr, "ns", nil)
+	assert.JSONEq(t, `{}`, string(result.Spec.NoTLS))
+	assert.Nil(t, result.Spec.UseTLS)
+}
+
+func TestBuildOriginPoolCreate_InsideNetwork(t *testing.T) {
+	cr := &v1alpha1.OriginPool{
+		ObjectMeta: metav1.ObjectMeta{Name: "net-pool", Namespace: "ns"},
+		Spec: v1alpha1.OriginPoolSpec{
+			Port: 80,
+			OriginServers: []v1alpha1.OriginServer{
+				{PrivateIP: &v1alpha1.PrivateIP{
+					IP:            "10.0.0.1",
+					Site:          &v1alpha1.ObjectRef{Name: "site1"},
+					InsideNetwork: &v1alpha1.EmptyObject{},
+				}},
+			},
+		},
+	}
+
+	result := buildOriginPoolCreate(cr, "ns", nil)
+	require.Len(t, result.Spec.OriginServers, 1)
+	assert.JSONEq(t, `{}`, string(result.Spec.OriginServers[0].PrivateIP.InsideNetwork))
 }
 
 func TestBuildOriginPoolReplace_IncludesResourceVersion(t *testing.T) {

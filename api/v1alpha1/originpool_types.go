@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -37,8 +36,8 @@ type OriginPoolSpec struct {
 	Port                  int                   `json:"port"`
 	LoadBalancerAlgorithm string                `json:"loadBalancerAlgorithm,omitempty"`
 	HealthChecks          []ObjectRef           `json:"healthChecks,omitempty"`
-	UseTLS                *apiextensionsv1.JSON `json:"useTLS,omitempty"`
-	NoTLS                 *apiextensionsv1.JSON `json:"noTLS,omitempty"`
+	UseTLS                *OriginPoolTLS `json:"useTLS,omitempty"`
+	NoTLS                 *EmptyObject   `json:"noTLS,omitempty"`
 }
 
 type OriginPoolStatus struct {
@@ -57,6 +56,20 @@ type DiscoveredOrigin struct {
 	AddressType string      `json:"addressType,omitempty"`
 	Status      string      `json:"status"`
 	Message     string      `json:"message,omitempty"`
+}
+
+type OriginPoolTLS struct {
+	DefaultSecurity        *EmptyObject       `json:"defaultSecurity,omitempty"`
+	LowSecurity            *EmptyObject       `json:"lowSecurity,omitempty"`
+	MediumSecurity         *EmptyObject       `json:"mediumSecurity,omitempty"`
+	CustomSecurity         *CustomTLSSecurity `json:"customSecurity,omitempty"`
+	SNI                    string             `json:"sni,omitempty"`
+	VolterraTrustedCA      *EmptyObject       `json:"volterraTrustedCA,omitempty"`
+	TrustedCAURL           string             `json:"trustedCAURL,omitempty"`
+	DisableSNI             *EmptyObject       `json:"disableSNI,omitempty"`
+	UseServerVerification  *EmptyObject       `json:"useServerVerification,omitempty"`
+	SkipServerVerification *EmptyObject       `json:"skipServerVerification,omitempty"`
+	NoMTLS                 *EmptyObject       `json:"noMTLS,omitempty"`
 }
 
 type OriginServer struct {
@@ -78,36 +91,36 @@ type PublicName struct {
 }
 
 type PrivateIP struct {
-	IP             string                `json:"ip"`
-	Site           *ObjectRef            `json:"site,omitempty"`
-	VirtualSite    *ObjectRef            `json:"virtualSite,omitempty"`
-	InsideNetwork  *apiextensionsv1.JSON `json:"insideNetwork,omitempty"`
-	OutsideNetwork *apiextensionsv1.JSON `json:"outsideNetwork,omitempty"`
+	IP             string       `json:"ip"`
+	Site           *ObjectRef   `json:"site,omitempty"`
+	VirtualSite    *ObjectRef   `json:"virtualSite,omitempty"`
+	InsideNetwork  *EmptyObject `json:"insideNetwork,omitempty"`
+	OutsideNetwork *EmptyObject `json:"outsideNetwork,omitempty"`
 }
 
 type PrivateName struct {
-	DNSName        string                `json:"dnsName"`
-	Site           *ObjectRef            `json:"site,omitempty"`
-	VirtualSite    *ObjectRef            `json:"virtualSite,omitempty"`
-	InsideNetwork  *apiextensionsv1.JSON `json:"insideNetwork,omitempty"`
-	OutsideNetwork *apiextensionsv1.JSON `json:"outsideNetwork,omitempty"`
+	DNSName        string       `json:"dnsName"`
+	Site           *ObjectRef   `json:"site,omitempty"`
+	VirtualSite    *ObjectRef   `json:"virtualSite,omitempty"`
+	InsideNetwork  *EmptyObject `json:"insideNetwork,omitempty"`
+	OutsideNetwork *EmptyObject `json:"outsideNetwork,omitempty"`
 }
 
 type K8SService struct {
-	ServiceName      string                `json:"serviceName"`
-	ServiceNamespace string                `json:"serviceNamespace,omitempty"`
-	Site             *ObjectRef            `json:"site,omitempty"`
-	VirtualSite      *ObjectRef            `json:"virtualSite,omitempty"`
-	InsideNetwork    *apiextensionsv1.JSON `json:"insideNetwork,omitempty"`
-	OutsideNetwork   *apiextensionsv1.JSON `json:"outsideNetwork,omitempty"`
+	ServiceName      string       `json:"serviceName"`
+	ServiceNamespace string       `json:"serviceNamespace,omitempty"`
+	Site             *ObjectRef   `json:"site,omitempty"`
+	VirtualSite      *ObjectRef   `json:"virtualSite,omitempty"`
+	InsideNetwork    *EmptyObject `json:"insideNetwork,omitempty"`
+	OutsideNetwork   *EmptyObject `json:"outsideNetwork,omitempty"`
 }
 
 type ConsulService struct {
-	ServiceName    string                `json:"serviceName"`
-	Site           *ObjectRef            `json:"site,omitempty"`
-	VirtualSite    *ObjectRef            `json:"virtualSite,omitempty"`
-	InsideNetwork  *apiextensionsv1.JSON `json:"insideNetwork,omitempty"`
-	OutsideNetwork *apiextensionsv1.JSON `json:"outsideNetwork,omitempty"`
+	ServiceName    string       `json:"serviceName"`
+	Site           *ObjectRef   `json:"site,omitempty"`
+	VirtualSite    *ObjectRef   `json:"virtualSite,omitempty"`
+	InsideNetwork  *EmptyObject `json:"insideNetwork,omitempty"`
+	OutsideNetwork *EmptyObject `json:"outsideNetwork,omitempty"`
 }
 
 type OriginServerDiscover struct {

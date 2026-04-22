@@ -3,11 +3,29 @@ package controller
 import (
 	"encoding/json"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
 	"github.com/kreynolds/f5xc-k8s-operator/internal/xcclient"
 )
+
+// Wire-format types for OriginPool TLS (snake_case JSON tags — mirrors F5XC REST API)
+
+type xcOriginPoolTLS struct {
+	TLSConfig              *xcTLSConfig         `json:"tls_config,omitempty"`
+	SNI                    string               `json:"sni,omitempty"`
+	VolterraTrustedCA      *v1alpha1.EmptyObject `json:"volterra_trusted_ca,omitempty"`
+	TrustedCAURL           string               `json:"trusted_ca_url,omitempty"`
+	DisableSNI             *v1alpha1.EmptyObject `json:"disable_sni,omitempty"`
+	UseServerVerification  *v1alpha1.EmptyObject `json:"use_server_verification,omitempty"`
+	SkipServerVerification *v1alpha1.EmptyObject `json:"skip_server_verification,omitempty"`
+	NoMTLS                 *v1alpha1.EmptyObject `json:"no_mtls,omitempty"`
+}
+
+type xcTLSConfig struct {
+	DefaultSecurity *v1alpha1.EmptyObject `json:"default_security,omitempty"`
+	LowSecurity     *v1alpha1.EmptyObject `json:"low_security,omitempty"`
+	MediumSecurity  *v1alpha1.EmptyObject `json:"medium_security,omitempty"`
+	CustomSecurity  *xcCustomTLSSecurity  `json:"custom_security,omitempty"`
+}
 
 func buildOriginPoolCreate(cr *v1alpha1.OriginPool, xcNamespace string, resolved []*ResolvedOrigin) *xcclient.OriginPoolCreate {
 	return &xcclient.OriginPoolCreate{
@@ -54,10 +72,10 @@ func mapOriginPoolSpec(spec *v1alpha1.OriginPoolSpec, resolved []*ResolvedOrigin
 	}
 
 	if spec.UseTLS != nil {
-		out.UseTLS = json.RawMessage(spec.UseTLS.Raw)
+		out.UseTLS = mapOriginPoolTLS(spec.UseTLS)
 	}
 	if spec.NoTLS != nil {
-		out.NoTLS = json.RawMessage(spec.NoTLS.Raw)
+		out.NoTLS = emptyObjectJSON
 	}
 
 	return out
@@ -127,12 +145,31 @@ func mapSiteLocator(site, virtualSite *v1alpha1.ObjectRef) *xcclient.SiteLocator
 	return sl
 }
 
-func mapNetworkChoice(inside, outside *apiextensionsv1.JSON) (json.RawMessage, json.RawMessage) {
+func mapOriginPoolTLS(tls *v1alpha1.OriginPoolTLS) json.RawMessage {
+	wire := xcOriginPoolTLS{
+		SNI:                    tls.SNI,
+		VolterraTrustedCA:      tls.VolterraTrustedCA,
+		TrustedCAURL:           tls.TrustedCAURL,
+		DisableSNI:             tls.DisableSNI,
+		UseServerVerification:  tls.UseServerVerification,
+		SkipServerVerification: tls.SkipServerVerification,
+		NoMTLS:                 tls.NoMTLS,
+	}
+	wire.TLSConfig = &xcTLSConfig{
+		DefaultSecurity: tls.DefaultSecurity,
+		LowSecurity:     tls.LowSecurity,
+		MediumSecurity:  tls.MediumSecurity,
+		CustomSecurity:  mapXCCustomTLSSecurity(tls.CustomSecurity),
+	}
+	return marshalJSON(wire)
+}
+
+func mapNetworkChoice(inside, outside *v1alpha1.EmptyObject) (json.RawMessage, json.RawMessage) {
 	if inside != nil {
-		return json.RawMessage(inside.Raw), nil
+		return emptyObjectJSON, nil
 	}
 	if outside != nil {
-		return nil, json.RawMessage(outside.Raw)
+		return nil, emptyObjectJSON
 	}
 	return nil, nil
 }
