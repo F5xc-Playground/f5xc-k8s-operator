@@ -23,7 +23,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -270,8 +269,8 @@ func TestContract_ServicePolicyCRDLifecycle(t *testing.T) {
 		},
 		Spec: v1alpha1.ServicePolicySpec{
 			XCNamespace:      xcNS,
-			AllowAllRequests: &apiextensionsv1.JSON{Raw: []byte("{}")},
-			AnyServer:        &apiextensionsv1.JSON{Raw: []byte("{}")},
+			AllowAllRequests: &v1alpha1.EmptyObject{},
+			AnyServer:        &v1alpha1.EmptyObject{},
 		},
 	}
 	require.NoError(t, testClient.Create(testCtx, cr))
@@ -331,7 +330,7 @@ func TestContract_AppFirewallCRDLifecycle(t *testing.T) {
 		},
 		Spec: v1alpha1.AppFirewallSpec{
 			XCNamespace: xcNS,
-			Blocking:    &apiextensionsv1.JSON{Raw: []byte("{}")},
+			Blocking:    &v1alpha1.EmptyObject{},
 		},
 	}
 	require.NoError(t, testClient.Create(testCtx, cr))
@@ -456,11 +455,11 @@ func TestContract_HTTPLoadBalancerCRDLifecycle(t *testing.T) {
 		Spec: v1alpha1.HTTPLoadBalancerSpec{
 			XCNamespace: xcNS,
 			Domains:     []string{"http.test.com"},
-			HTTP:        &apiextensionsv1.JSON{Raw: []byte(`{"dns_volterra_managed":true}`)},
+			HTTP:        &v1alpha1.HTTPConfig{DNSVolterraManaged: true},
 			DefaultRoutePools: []v1alpha1.RoutePool{
 				{Pool: v1alpha1.ObjectRef{Name: "test-pool"}, Weight: uint32Ptr(1)},
 			},
-			AdvertiseOnPublicDefaultVIP: &apiextensionsv1.JSON{Raw: []byte("{}")},
+			AdvertiseOnPublicDefaultVIP: &v1alpha1.EmptyObject{},
 		},
 	}
 	require.NoError(t, testClient.Create(testCtx, cr))
@@ -558,7 +557,7 @@ func TestContract_CertificateCRDLifecycle(t *testing.T) {
 		Spec: v1alpha1.CertificateSpec{
 			XCNamespace:         xcNS,
 			SecretRef:           v1alpha1.SecretRef{Name: "contract-cert-tls"},
-			DisableOcspStapling: &apiextensionsv1.JSON{Raw: []byte("{}")},
+			DisableOcspStapling: &v1alpha1.EmptyObject{},
 		},
 	}
 	require.NoError(t, testClient.Create(testCtx, cr))
@@ -727,7 +726,7 @@ func TestContract_OriginPoolCRDLifecycle_NoTLS(t *testing.T) {
 				{PublicIP: &v1alpha1.PublicIP{IP: "10.0.0.1"}},
 			},
 			Port:  80,
-			NoTLS: &apiextensionsv1.JSON{Raw: []byte("{}")},
+			NoTLS: &v1alpha1.EmptyObject{},
 		},
 	}
 	require.NoError(t, testClient.Create(testCtx, cr))
@@ -907,8 +906,8 @@ func TestContract_AppFirewallCRDLifecycle_BlockingMode(t *testing.T) {
 		},
 		Spec: v1alpha1.AppFirewallSpec{
 			XCNamespace:          xcNS,
-			Blocking:             &apiextensionsv1.JSON{Raw: []byte("{}")},
-			DisableAnonymization: &apiextensionsv1.JSON{Raw: []byte("{}")},
+			Blocking:             &v1alpha1.EmptyObject{},
+			DisableAnonymization: &v1alpha1.EmptyObject{},
 		},
 	}
 	require.NoError(t, testClient.Create(testCtx, cr))
@@ -1027,7 +1026,7 @@ func TestContract_ServicePolicyCRDLifecycle_DenyAll(t *testing.T) {
 		},
 		Spec: v1alpha1.ServicePolicySpec{
 			XCNamespace:     xcNS,
-			DenyAllRequests: &apiextensionsv1.JSON{Raw: []byte("{}")},
+			DenyAllRequests: &v1alpha1.EmptyObject{},
 			ServerName:      "api.example.com",
 		},
 	}
@@ -1087,13 +1086,11 @@ func TestContract_HTTPLoadBalancerCRDLifecycle_HTTPSAutoCert(t *testing.T) {
 		Spec: v1alpha1.HTTPLoadBalancerSpec{
 			XCNamespace: xcNS,
 			Domains:     []string{"autocert.contract.test"},
-			HTTPSAutoCert: &apiextensionsv1.JSON{
-				Raw: []byte(`{"add_hsts":true,"http_redirect":true,"no_mtls":{}}`),
-			},
+			HTTPSAutoCert: &v1alpha1.HTTPSAutoCertConfig{AddHSTS: true, HTTPRedirect: true, NoMTLS: &v1alpha1.EmptyObject{}},
 			DefaultRoutePools: []v1alpha1.RoutePool{
 				{Pool: v1alpha1.ObjectRef{Name: "contract-pool"}, Weight: uint32Ptr(1)},
 			},
-			AdvertiseOnPublicDefaultVIP: &apiextensionsv1.JSON{Raw: []byte("{}")},
+			AdvertiseOnPublicDefaultVIP: &v1alpha1.EmptyObject{},
 		},
 	}
 	require.NoError(t, testClient.Create(testCtx, cr))
@@ -1155,7 +1152,7 @@ func TestContract_TCPLoadBalancerCRDLifecycle_DoNotAdvertise(t *testing.T) {
 			OriginPools: []v1alpha1.RoutePool{
 				{Pool: v1alpha1.ObjectRef{Name: "contract-pool"}, Weight: uint32Ptr(1)},
 			},
-			DoNotAdvertise: &apiextensionsv1.JSON{Raw: []byte("{}")},
+			DoNotAdvertise: &v1alpha1.EmptyObject{},
 		},
 	}
 	require.NoError(t, testClient.Create(testCtx, cr))
