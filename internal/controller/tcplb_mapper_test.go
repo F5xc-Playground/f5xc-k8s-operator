@@ -7,7 +7,6 @@ import (
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -66,15 +65,54 @@ func TestBuildTCPLoadBalancerCreate_RoutePoolWeightPriority(t *testing.T) {
 }
 
 func TestBuildTCPLoadBalancerCreate_TLSTCPAutoCert(t *testing.T) {
-	tlsJSON := json.RawMessage(`{"no_mtls":{}}`)
 	cr := sampleTCPLoadBalancer("tlb-tls", "ns")
-	cr.Spec.TLSTCPAutoCert = &apiextensionsv1.JSON{Raw: tlsJSON}
+	cr.Spec.TLSTCPAutoCert = &v1alpha1.TLSTCPAutoCert{
+		NoMTLS: &v1alpha1.EmptyObject{},
+	}
 
 	result := buildTCPLoadBalancerCreate(cr, "ns")
-
 	assert.JSONEq(t, `{"no_mtls":{}}`, string(result.Spec.TLSTCPAutoCert))
 	assert.Nil(t, result.Spec.TCP)
 	assert.Nil(t, result.Spec.TLSTCP)
+}
+
+func TestBuildTCPLoadBalancerCreate_NoTLS(t *testing.T) {
+	cr := sampleTCPLoadBalancer("tlb-notls", "ns")
+	cr.Spec.NoTLS = &v1alpha1.EmptyObject{}
+
+	result := buildTCPLoadBalancerCreate(cr, "ns")
+	assert.JSONEq(t, `{}`, string(result.Spec.TCP))
+	assert.Nil(t, result.Spec.TLSTCP)
+}
+
+func TestBuildTCPLoadBalancerCreate_TLSParameters(t *testing.T) {
+	cr := sampleTCPLoadBalancer("tlb-tls-params", "ns")
+	cr.Spec.TLSParameters = &v1alpha1.TLSParameters{
+		DefaultSecurity: &v1alpha1.EmptyObject{},
+		NoMTLS:          &v1alpha1.EmptyObject{},
+	}
+
+	result := buildTCPLoadBalancerCreate(cr, "ns")
+	assert.NotNil(t, result.Spec.TLSTCP)
+	var tls map[string]interface{}
+	require.NoError(t, json.Unmarshal(result.Spec.TLSTCP, &tls))
+	_, hasDefaultSecurity := tls["default_security"]
+	assert.True(t, hasDefaultSecurity)
+}
+
+func TestBuildTCPLoadBalancerCreate_AdvertiseCustom(t *testing.T) {
+	cr := sampleTCPLoadBalancer("tlb-adv", "ns")
+	cr.Spec.AdvertiseCustom = &v1alpha1.AdvertiseCustom{
+		AdvertiseWhere: []v1alpha1.AdvertiseWhere{
+			{Port: 8080, Site: &v1alpha1.AdvertiseSite{
+				Network: "SITE_NETWORK_INSIDE",
+				Site:    v1alpha1.ObjectRef{Name: "my-site"},
+			}},
+		},
+	}
+
+	result := buildTCPLoadBalancerCreate(cr, "ns")
+	assert.NotNil(t, result.Spec.AdvertiseCustom)
 }
 
 func TestBuildTCPLoadBalancerReplace_IncludesResourceVersion(t *testing.T) {

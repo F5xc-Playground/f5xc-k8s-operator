@@ -7,6 +7,21 @@ import (
 	"github.com/kreynolds/f5xc-k8s-operator/internal/xcclient"
 )
 
+type xcTLSParameters struct {
+	TLSCertificates []xcTLSCertificateRef `json:"tls_certificates,omitempty"`
+	DefaultSecurity *v1alpha1.EmptyObject `json:"default_security,omitempty"`
+	LowSecurity     *v1alpha1.EmptyObject `json:"low_security,omitempty"`
+	MediumSecurity  *v1alpha1.EmptyObject `json:"medium_security,omitempty"`
+	CustomSecurity  *xcCustomTLSSecurity  `json:"custom_security,omitempty"`
+	NoMTLS          *v1alpha1.EmptyObject `json:"no_mtls,omitempty"`
+	UseMTLS         *xcUseMTLS            `json:"use_mtls,omitempty"`
+}
+
+type xcTLSTCPAutoCert struct {
+	NoMTLS  *v1alpha1.EmptyObject `json:"no_mtls,omitempty"`
+	UseMTLS *xcUseMTLS            `json:"use_mtls,omitempty"`
+}
+
 func buildTCPLoadBalancerCreate(cr *v1alpha1.TCPLoadBalancer, xcNamespace string) *xcclient.TCPLoadBalancerCreate {
 	return &xcclient.TCPLoadBalancerCreate{
 		Metadata: xcclient.ObjectMeta{
@@ -45,30 +60,45 @@ func mapTCPLoadBalancerSpec(spec *v1alpha1.TCPLoadBalancerSpec) xcclient.TCPLoad
 
 	// TLS OneOf
 	if spec.NoTLS != nil {
-		out.TCP = json.RawMessage(spec.NoTLS.Raw)
+		out.TCP = emptyObjectJSON
 	}
 	if spec.TLSParameters != nil {
-		out.TLSTCP = json.RawMessage(spec.TLSParameters.Raw)
+		out.TLSTCP = mapTLSParameters(spec.TLSParameters)
 	}
 	if spec.TLSTCPAutoCert != nil {
-		out.TLSTCPAutoCert = json.RawMessage(spec.TLSTCPAutoCert.Raw)
+		out.TLSTCPAutoCert = marshalJSON(xcTLSTCPAutoCert{
+			NoMTLS:  spec.TLSTCPAutoCert.NoMTLS,
+			UseMTLS: mapXCUseMTLS(spec.TLSTCPAutoCert.UseMTLS),
+		})
 	}
 
 	// Advertise OneOf
 	if spec.AdvertiseOnPublicDefaultVIP != nil {
-		out.AdvertiseOnPublicDefaultVIP = json.RawMessage(spec.AdvertiseOnPublicDefaultVIP.Raw)
+		out.AdvertiseOnPublicDefaultVIP = emptyObjectJSON
 	}
 	if spec.AdvertiseOnPublic != nil {
-		out.AdvertiseOnPublic = json.RawMessage(spec.AdvertiseOnPublic.Raw)
+		out.AdvertiseOnPublic = mapXCAdvertiseOnPublic(spec.AdvertiseOnPublic)
 	}
 	if spec.AdvertiseCustom != nil {
-		out.AdvertiseCustom = json.RawMessage(spec.AdvertiseCustom.Raw)
+		out.AdvertiseCustom = mapXCAdvertiseCustom(spec.AdvertiseCustom)
 	}
 	if spec.DoNotAdvertise != nil {
-		out.DoNotAdvertise = json.RawMessage(spec.DoNotAdvertise.Raw)
+		out.DoNotAdvertise = emptyObjectJSON
 	}
 
 	return out
+}
+
+func mapTLSParameters(p *v1alpha1.TLSParameters) json.RawMessage {
+	return marshalJSON(xcTLSParameters{
+		TLSCertificates: mapXCTLSCertificateRefs(p.TLSCertificates),
+		DefaultSecurity: p.DefaultSecurity,
+		LowSecurity:     p.LowSecurity,
+		MediumSecurity:  p.MediumSecurity,
+		CustomSecurity:  mapXCCustomTLSSecurity(p.CustomSecurity),
+		NoMTLS:          p.NoMTLS,
+		UseMTLS:         mapXCUseMTLS(p.UseMTLS),
+	})
 }
 
 func mapRoutePool(rp *v1alpha1.RoutePool) xcclient.RoutePool {

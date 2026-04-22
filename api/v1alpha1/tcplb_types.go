@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -39,15 +38,32 @@ type TCPLoadBalancerSpec struct {
 	OriginPools []RoutePool `json:"originPools"`
 
 	// TLS OneOf: noTLS, tlsParameters, tlsTCPAutoCert
-	NoTLS          *apiextensionsv1.JSON `json:"noTLS,omitempty"`
-	TLSParameters  *apiextensionsv1.JSON `json:"tlsParameters,omitempty"`
-	TLSTCPAutoCert *apiextensionsv1.JSON `json:"tlsTCPAutoCert,omitempty"`
+	NoTLS          *EmptyObject    `json:"noTLS,omitempty"`
+	TLSParameters  *TLSParameters  `json:"tlsParameters,omitempty"`
+	TLSTCPAutoCert *TLSTCPAutoCert `json:"tlsTCPAutoCert,omitempty"`
 
 	// Advertise OneOf: advertiseOnPublicDefaultVIP, advertiseOnPublic, advertiseCustom, doNotAdvertise
-	AdvertiseOnPublicDefaultVIP *apiextensionsv1.JSON `json:"advertiseOnPublicDefaultVIP,omitempty"`
-	AdvertiseOnPublic           *apiextensionsv1.JSON `json:"advertiseOnPublic,omitempty"`
-	AdvertiseCustom             *apiextensionsv1.JSON `json:"advertiseCustom,omitempty"`
-	DoNotAdvertise              *apiextensionsv1.JSON `json:"doNotAdvertise,omitempty"`
+	AdvertiseOnPublicDefaultVIP *EmptyObject       `json:"advertiseOnPublicDefaultVIP,omitempty"`
+	AdvertiseOnPublic           *AdvertiseOnPublic `json:"advertiseOnPublic,omitempty"`
+	AdvertiseCustom             *AdvertiseCustom   `json:"advertiseCustom,omitempty"`
+	DoNotAdvertise              *EmptyObject       `json:"doNotAdvertise,omitempty"`
+}
+
+// TLSParameters holds typed TLS configuration for a TCP load balancer.
+type TLSParameters struct {
+	TLSCertificates []TLSCertificateRef `json:"tlsCertificates,omitempty"`
+	DefaultSecurity *EmptyObject        `json:"defaultSecurity,omitempty"`
+	LowSecurity     *EmptyObject        `json:"lowSecurity,omitempty"`
+	MediumSecurity  *EmptyObject        `json:"mediumSecurity,omitempty"`
+	CustomSecurity  *CustomTLSSecurity  `json:"customSecurity,omitempty"`
+	NoMTLS          *EmptyObject        `json:"noMTLS,omitempty"`
+	UseMTLS         *UseMTLS            `json:"useMTLS,omitempty"`
+}
+
+// TLSTCPAutoCert holds mTLS configuration for auto-cert TCP load balancers.
+type TLSTCPAutoCert struct {
+	NoMTLS  *EmptyObject `json:"noMTLS,omitempty"`
+	UseMTLS *UseMTLS     `json:"useMTLS,omitempty"`
 }
 
 // TCPLoadBalancerStatus defines the observed state of TCPLoadBalancer.
