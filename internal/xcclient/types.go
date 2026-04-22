@@ -12,7 +12,10 @@ const (
 	ResourceHealthCheck      = "healthchecks"
 	ResourceServicePolicy    = "service_policys" // Note: irregular plural
 	ResourceRateLimiter      = "rate_limiters"
-	ResourceCertificate      = "certificates"
+	ResourceCertificate             = "certificates"
+	ResourceAPIDefinition           = "api_definitions"
+	ResourceUserIdentification      = "user_identifications"
+	ResourceMaliciousUserMitigation = "malicious_user_mitigations"
 )
 
 // ObjectMeta holds the user-supplied metadata for an F5 XC object.

@@ -118,3 +118,9 @@ type ASNMatcher struct {
 type LabelSelector struct {
 	Expressions []string `json:"expressions"`
 }
+
+// APIOperation identifies an API endpoint by HTTP method and path.
+type APIOperation struct {
+	Method string `json:"method"`
+	Path   string `json:"path"`
+}
