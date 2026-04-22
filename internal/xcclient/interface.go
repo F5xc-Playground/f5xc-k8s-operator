@@ -81,6 +81,13 @@ type XCClient interface {
 	DeleteUserIdentification(ctx context.Context, ns, name string) error
 	ListUserIdentifications(ctx context.Context, ns string) ([]*UserIdentification, error)
 
+	// MaliciousUserMitigation
+	CreateMaliciousUserMitigation(ctx context.Context, ns string, m *MaliciousUserMitigationCreate) (*MaliciousUserMitigation, error)
+	GetMaliciousUserMitigation(ctx context.Context, ns, name string) (*MaliciousUserMitigation, error)
+	ReplaceMaliciousUserMitigation(ctx context.Context, ns, name string, m *MaliciousUserMitigationReplace) (*MaliciousUserMitigation, error)
+	DeleteMaliciousUserMitigation(ctx context.Context, ns, name string) error
+	ListMaliciousUserMitigations(ctx context.Context, ns string) ([]*MaliciousUserMitigation, error)
+
 	// Diff helper
 	ClientNeedsUpdate(current, desired json.RawMessage) (bool, error)
 }

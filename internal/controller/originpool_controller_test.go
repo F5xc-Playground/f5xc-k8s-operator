@@ -265,6 +265,22 @@ func (f *fakeXCClient) ListUserIdentifications(_ context.Context, ns string) ([]
 	return nil, nil
 }
 
+func (f *fakeXCClient) CreateMaliciousUserMitigation(_ context.Context, ns string, m *xcclient.MaliciousUserMitigationCreate) (*xcclient.MaliciousUserMitigation, error) {
+	return nil, nil
+}
+func (f *fakeXCClient) GetMaliciousUserMitigation(_ context.Context, ns, name string) (*xcclient.MaliciousUserMitigation, error) {
+	return nil, nil
+}
+func (f *fakeXCClient) ReplaceMaliciousUserMitigation(_ context.Context, ns, name string, m *xcclient.MaliciousUserMitigationReplace) (*xcclient.MaliciousUserMitigation, error) {
+	return nil, nil
+}
+func (f *fakeXCClient) DeleteMaliciousUserMitigation(_ context.Context, ns, name string) error {
+	return nil
+}
+func (f *fakeXCClient) ListMaliciousUserMitigations(_ context.Context, ns string) ([]*xcclient.MaliciousUserMitigation, error) {
+	return nil, nil
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
