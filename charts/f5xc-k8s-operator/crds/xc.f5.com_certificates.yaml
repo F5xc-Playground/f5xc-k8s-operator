@@ -54,9 +54,19 @@ spec:
                 description: |-
                   OCSP stapling choice — all optional; omitting defaults to disabled at the API level.
                   OneOf: CustomHashAlgorithms | DisableOcspStapling | UseSystemDefaults
-                x-kubernetes-preserve-unknown-fields: true
+                properties:
+                  hashAlgorithms:
+                    items:
+                      type: string
+                    type: array
+                required:
+                - hashAlgorithms
+                type: object
               disableOcspStapling:
-                x-kubernetes-preserve-unknown-fields: true
+                description: |-
+                  EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                  "oneof" fields where the API expects an empty JSON object ("{}").
+                type: object
               secretRef:
                 description: SecretRef points to a kubernetes.io/tls Secret containing
                   tls.crt and tls.key.
@@ -71,7 +81,10 @@ spec:
                 - name
                 type: object
               useSystemDefaults:
-                x-kubernetes-preserve-unknown-fields: true
+                description: |-
+                  EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                  "oneof" fields where the API expects an empty JSON object ("{}").
+                type: object
               xcNamespace:
                 type: string
             required:

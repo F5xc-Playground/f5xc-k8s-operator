@@ -52,37 +52,134 @@ spec:
             properties:
               allowAllResponseCodes:
                 description: 'Response codes — OneOf: AllowAllResponseCodes | AllowedResponseCodes'
-                x-kubernetes-preserve-unknown-fields: true
+                type: object
               allowedResponseCodes:
-                x-kubernetes-preserve-unknown-fields: true
+                properties:
+                  responseCode:
+                    items:
+                      type: integer
+                    type: array
+                required:
+                - responseCode
+                type: object
               blocking:
-                x-kubernetes-preserve-unknown-fields: true
+                description: |-
+                  EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                  "oneof" fields where the API expects an empty JSON object ("{}").
+                type: object
               blockingPage:
-                x-kubernetes-preserve-unknown-fields: true
+                properties:
+                  blockingPage:
+                    type: string
+                  responseCode:
+                    type: string
+                type: object
               botProtectionSetting:
-                x-kubernetes-preserve-unknown-fields: true
+                properties:
+                  goodBotAction:
+                    type: string
+                  maliciousBotAction:
+                    type: string
+                  suspiciousBotAction:
+                    type: string
+                type: object
               customAnonymization:
-                x-kubernetes-preserve-unknown-fields: true
+                properties:
+                  anonymizationConfig:
+                    items:
+                      properties:
+                        cookieName:
+                          type: string
+                        headerName:
+                          type: string
+                        queryParameter:
+                          type: string
+                      type: object
+                    type: array
+                  specificDomains:
+                    items:
+                      type: string
+                    type: array
+                type: object
               defaultAnonymization:
                 description: 'Anonymization — OneOf: DefaultAnonymization | DisableAnonymization
                   | CustomAnonymization'
-                x-kubernetes-preserve-unknown-fields: true
+                type: object
               defaultBotSetting:
                 description: 'Bot setting — OneOf: DefaultBotSetting | BotProtectionSetting'
-                x-kubernetes-preserve-unknown-fields: true
+                type: object
               defaultDetectionSettings:
                 description: 'Detection — OneOf: DefaultDetectionSettings | DetectionSettings'
-                x-kubernetes-preserve-unknown-fields: true
+                type: object
               detectionSettings:
-                x-kubernetes-preserve-unknown-fields: true
+                properties:
+                  disableSuppression:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  disableThreatCampaigns:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  enableSuppression:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  enableThreatCampaigns:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  signatureSelectionSetting:
+                    properties:
+                      attackTypeSettings:
+                        properties:
+                          disabledAttackTypes:
+                            items:
+                              properties:
+                                name:
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                        type: object
+                      defaultAttackTypeSettings:
+                        description: |-
+                          EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                          "oneof" fields where the API expects an empty JSON object ("{}").
+                        type: object
+                      highMediumAccuracySignatures:
+                        description: |-
+                          EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                          "oneof" fields where the API expects an empty JSON object ("{}").
+                        type: object
+                      highMediumLowAccuracySignatures:
+                        description: |-
+                          EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                          "oneof" fields where the API expects an empty JSON object ("{}").
+                        type: object
+                      onlyHighAccuracySignatures:
+                        description: |-
+                          EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                          "oneof" fields where the API expects an empty JSON object ("{}").
+                        type: object
+                    type: object
+                type: object
               disableAnonymization:
-                x-kubernetes-preserve-unknown-fields: true
+                description: |-
+                  EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                  "oneof" fields where the API expects an empty JSON object ("{}").
+                type: object
               monitoring:
                 description: 'Enforcement mode — OneOf: Monitoring | Blocking'
-                x-kubernetes-preserve-unknown-fields: true
+                type: object
               useDefaultBlockingPage:
                 description: 'Blocking page — OneOf: UseDefaultBlockingPage | BlockingPage'
-                x-kubernetes-preserve-unknown-fields: true
+                type: object
               xcNamespace:
                 type: string
             required:

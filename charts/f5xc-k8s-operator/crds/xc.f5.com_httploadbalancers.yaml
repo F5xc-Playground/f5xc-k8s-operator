@@ -52,16 +52,116 @@ spec:
             description: HTTPLoadBalancerSpec defines the desired state of an HTTPLoadBalancer.
             properties:
               activeServicePolicies:
-                x-kubernetes-preserve-unknown-fields: true
+                description: ActiveServicePoliciesConfig holds the active service
+                  policies list.
+                properties:
+                  policies:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        tenant:
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                required:
+                - policies
+                type: object
               advertiseCustom:
-                x-kubernetes-preserve-unknown-fields: true
+                description: AdvertiseCustom advertises the load balancer on one or
+                  more custom locations.
+                properties:
+                  advertiseWhere:
+                    items:
+                      description: AdvertiseWhere describes a single advertise-where
+                        entry.
+                      properties:
+                        port:
+                          format: int32
+                          type: integer
+                        site:
+                          description: AdvertiseSite describes a site (or virtual-site)
+                            advertise location.
+                          properties:
+                            ipAddress:
+                              type: string
+                            network:
+                              type: string
+                            site:
+                              properties:
+                                name:
+                                  type: string
+                                namespace:
+                                  type: string
+                                tenant:
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                          type: object
+                        useDefaultPort:
+                          description: |-
+                            EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                            "oneof" fields where the API expects an empty JSON object ("{}").
+                          type: object
+                        virtualNetwork:
+                          description: AdvertiseVirtualNetwork describes a virtual-network
+                            advertise location.
+                          properties:
+                            defaultVIP:
+                              description: |-
+                                EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                                "oneof" fields where the API expects an empty JSON object ("{}").
+                              type: object
+                            specificVIP:
+                              type: string
+                          type: object
+                        virtualSite:
+                          description: AdvertiseSite describes a site (or virtual-site)
+                            advertise location.
+                          properties:
+                            ipAddress:
+                              type: string
+                            network:
+                              type: string
+                            site:
+                              properties:
+                                name:
+                                  type: string
+                                namespace:
+                                  type: string
+                                tenant:
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                          type: object
+                      type: object
+                    type: array
+                type: object
               advertiseOnPublic:
-                x-kubernetes-preserve-unknown-fields: true
+                description: AdvertiseOnPublic advertises the load balancer on a specific
+                  public IP.
+                properties:
+                  publicIP:
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      tenant:
+                        type: string
+                    required:
+                    - name
+                    type: object
+                type: object
               advertiseOnPublicDefaultVIP:
-                description: |-
-                  Advertise OneOf: advertiseOnPublicDefaultVIP, advertiseOnPublic,
-                  advertiseCustom, doNotAdvertise
-                x-kubernetes-preserve-unknown-fields: true
+                description: Advertise OneOf
+                type: object
               appFirewall:
                 properties:
                   name:
@@ -74,11 +174,111 @@ spec:
                 - name
                 type: object
               botDefense:
-                x-kubernetes-preserve-unknown-fields: true
+                description: BotDefenseConfig configures bot defense.
+                properties:
+                  policy:
+                    description: BotDefensePolicy holds the bot defense policy.
+                    properties:
+                      disableMobileSDK:
+                        description: |-
+                          EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                          "oneof" fields where the API expects an empty JSON object ("{}").
+                        type: object
+                      jsDownloadPath:
+                        type: string
+                      jsInsertionRules:
+                        description: JSInsertionRules holds JS insertion rules for
+                          bot defense.
+                        properties:
+                          rules:
+                            items:
+                              description: JSInsertionRule defines a single JS insertion
+                                rule.
+                              properties:
+                                excludedPaths:
+                                  items:
+                                    description: PathMatcher matches an HTTP request
+                                      path.
+                                    properties:
+                                      path:
+                                        type: string
+                                      prefix:
+                                        type: string
+                                      regex:
+                                        type: string
+                                    type: object
+                                  type: array
+                              type: object
+                            type: array
+                        type: object
+                      protectedAppEndpoints:
+                        items:
+                          description: ProtectedAppEndpoint defines a protected application
+                            endpoint for bot defense.
+                          properties:
+                            anyDomain:
+                              description: |-
+                                EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                                "oneof" fields where the API expects an empty JSON object ("{}").
+                              type: object
+                            domain:
+                              type: string
+                            flow:
+                              type: string
+                            httpMethods:
+                              items:
+                                type: string
+                              type: array
+                            metadata:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            mitigationAction:
+                              x-kubernetes-preserve-unknown-fields: true
+                            path:
+                              description: PathMatcher matches an HTTP request path.
+                              properties:
+                                path:
+                                  type: string
+                                prefix:
+                                  type: string
+                                regex:
+                                  type: string
+                              type: object
+                            protocol:
+                              type: string
+                          required:
+                          - path
+                          type: object
+                        type: array
+                    type: object
+                  regionalEndpoint:
+                    type: string
+                  timeout:
+                    format: int32
+                    type: integer
+                type: object
               captchaChallenge:
-                x-kubernetes-preserve-unknown-fields: true
+                description: CaptchaChallengeConfig configures a CAPTCHA challenge.
+                properties:
+                  customPage:
+                    type: string
+                  expiry:
+                    format: int32
+                    type: integer
+                type: object
               cookieStickiness:
-                x-kubernetes-preserve-unknown-fields: true
+                description: CookieStickinessConfig configures cookie-based sticky
+                  sessions.
+                properties:
+                  name:
+                    type: string
+                  path:
+                    type: string
+                  ttl:
+                    format: int32
+                    type: integer
+                type: object
               defaultRoutePools:
                 items:
                   properties:
@@ -104,74 +304,426 @@ spec:
                   type: object
                 type: array
               disableAPIDiscovery:
-                description: 'API discovery OneOf: disableAPIDiscovery, enableAPIDiscovery'
-                x-kubernetes-preserve-unknown-fields: true
+                description: API discovery OneOf
+                type: object
               disableBotDefense:
-                description: 'Bot defense OneOf: disableBotDefense, botDefense'
-                x-kubernetes-preserve-unknown-fields: true
+                description: Bot defense OneOf
+                type: object
               disableIPReputation:
-                description: 'IP reputation OneOf: disableIPReputation, enableIPReputation'
-                x-kubernetes-preserve-unknown-fields: true
+                description: IP reputation OneOf
+                type: object
               disableRateLimit:
-                description: 'Rate limit OneOf: disableRateLimit, rateLimit'
-                x-kubernetes-preserve-unknown-fields: true
+                description: Rate limit OneOf
+                type: object
               disableWAF:
-                description: 'WAF OneOf: disableWAF, appFirewall'
-                x-kubernetes-preserve-unknown-fields: true
+                description: WAF OneOf
+                type: object
               doNotAdvertise:
-                x-kubernetes-preserve-unknown-fields: true
+                description: |-
+                  EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                  "oneof" fields where the API expects an empty JSON object ("{}").
+                type: object
               domains:
                 items:
                   type: string
                 type: array
               enableAPIDiscovery:
-                x-kubernetes-preserve-unknown-fields: true
+                description: EnableAPIDiscoveryConfig configures API discovery.
+                properties:
+                  apiCrawler:
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      tenant:
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  apiDiscoveryFromCodeScan:
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      tenant:
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  defaultAPIAuthDiscovery:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  disableLearnFromRedirectTraffic:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  discoveredAPISettings:
+                    description: DiscoveredAPISettings configures discovered API settings.
+                    properties:
+                      purgeByDurationDays:
+                        format: int32
+                        type: integer
+                    type: object
+                  enableLearnFromRedirectTraffic:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  sensitiveDataDetectionRules:
+                    description: SensitiveDataDetectionRules holds sensitive data
+                      detection rules.
+                    properties:
+                      sensitiveDataTypes:
+                        items:
+                          description: SensitiveDataType identifies a sensitive data
+                            type.
+                          properties:
+                            type:
+                              type: string
+                          required:
+                          - type
+                          type: object
+                        type: array
+                    type: object
+                type: object
               enableIPReputation:
-                x-kubernetes-preserve-unknown-fields: true
+                description: EnableIPReputationConfig configures IP reputation filtering.
+                properties:
+                  ipThreatCategories:
+                    items:
+                      type: string
+                    type: array
+                type: object
               http:
-                description: 'TLS OneOf: http, https, httpsAutoCert'
-                x-kubernetes-preserve-unknown-fields: true
+                description: TLS OneOf
+                properties:
+                  dnsVolterraManaged:
+                    type: boolean
+                  port:
+                    format: int32
+                    type: integer
+                type: object
               https:
-                x-kubernetes-preserve-unknown-fields: true
+                description: HTTPSConfig configures HTTPS with explicit certificates.
+                properties:
+                  addHSTS:
+                    type: boolean
+                  customSecurity:
+                    description: CustomTLSSecurity holds a custom TLS cipher suite
+                      list.
+                    properties:
+                      cipherSuites:
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  defaultSecurity:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  httpRedirect:
+                    type: boolean
+                  lowSecurity:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  mediumSecurity:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  noMTLS:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  port:
+                    format: int32
+                    type: integer
+                  tlsCertificates:
+                    items:
+                      description: TLSCertificateRef references a TLS certificate
+                        and its private key.
+                      properties:
+                        certificateURL:
+                          type: string
+                        privateKey:
+                          description: CertificatePrivKey holds private-key material
+                            for a TLS certificate.
+                          properties:
+                            clearSecretInfo:
+                              description: ClearSecretInfo identifies a secret stored
+                                in clear text.
+                              properties:
+                                provider:
+                                  type: string
+                                url:
+                                  type: string
+                              type: object
+                          type: object
+                      type: object
+                    type: array
+                  useMTLS:
+                    description: UseMTLS enables mutual TLS with the given trusted
+                      CA URL.
+                    properties:
+                      trustedCAURL:
+                        type: string
+                    type: object
+                type: object
               httpsAutoCert:
-                x-kubernetes-preserve-unknown-fields: true
+                description: HTTPSAutoCertConfig configures HTTPS with auto-managed
+                  certificates.
+                properties:
+                  addHSTS:
+                    type: boolean
+                  httpRedirect:
+                    type: boolean
+                  noMTLS:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  port:
+                    format: int32
+                    type: integer
+                  useMTLS:
+                    description: UseMTLS enables mutual TLS with the given trusted
+                      CA URL.
+                    properties:
+                      trustedCAURL:
+                        type: string
+                    type: object
+                type: object
               jsChallenge:
-                x-kubernetes-preserve-unknown-fields: true
+                description: JSChallengeConfig configures a JavaScript challenge.
+                properties:
+                  cookieExpiry:
+                    format: int32
+                    type: integer
+                  customPage:
+                    type: string
+                  jsScriptDelay:
+                    format: int32
+                    type: integer
+                type: object
               leastActive:
-                x-kubernetes-preserve-unknown-fields: true
-              noChallenge:
-                description: 'Challenge OneOf: noChallenge, jsChallenge, captchaChallenge,
-                  policyBasedChallenge'
-                x-kubernetes-preserve-unknown-fields: true
-              noServicePolicies:
-                x-kubernetes-preserve-unknown-fields: true
-              policyBasedChallenge:
-                x-kubernetes-preserve-unknown-fields: true
-              random:
-                x-kubernetes-preserve-unknown-fields: true
-              rateLimit:
-                x-kubernetes-preserve-unknown-fields: true
-              ringHash:
-                x-kubernetes-preserve-unknown-fields: true
-              roundRobin:
                 description: |-
-                  LB algorithm OneOf: roundRobin, leastActive, random, sourceIPStickiness,
-                  cookieStickiness, ringHash
-                x-kubernetes-preserve-unknown-fields: true
+                  EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                  "oneof" fields where the API expects an empty JSON object ("{}").
+                type: object
+              noChallenge:
+                description: Challenge OneOf
+                type: object
+              noServicePolicies:
+                description: |-
+                  EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                  "oneof" fields where the API expects an empty JSON object ("{}").
+                type: object
+              policyBasedChallenge:
+                description: PolicyBasedChallengeConfig configures policy-based challenges.
+                properties:
+                  alwaysEnableCaptcha:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  alwaysEnableJSChallenge:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  defaultCaptchaChallengeParameters:
+                    description: CaptchaChallengeConfig configures a CAPTCHA challenge.
+                    properties:
+                      customPage:
+                        type: string
+                      expiry:
+                        format: int32
+                        type: integer
+                    type: object
+                  defaultJSChallengeParameters:
+                    description: JSChallengeConfig configures a JavaScript challenge.
+                    properties:
+                      cookieExpiry:
+                        format: int32
+                        type: integer
+                      customPage:
+                        type: string
+                      jsScriptDelay:
+                        format: int32
+                        type: integer
+                    type: object
+                  defaultMitigationSettings:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  maliciousUserMitigationBypass:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  noChallenge:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  ruleList:
+                    description: ChallengeRuleList holds a list of challenge rules.
+                    properties:
+                      rules:
+                        items:
+                          description: ChallengeRule defines a single challenge rule.
+                          properties:
+                            metadata:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            spec:
+                              description: ChallengeRuleSpec defines the spec of a
+                                challenge rule.
+                              properties:
+                                challengeAction:
+                                  type: string
+                              type: object
+                          type: object
+                        type: array
+                    type: object
+                  temporaryBlockingParameters:
+                    description: TemporaryBlockingParams configures temporary blocking
+                      parameters.
+                    properties:
+                      duration:
+                        format: int32
+                        type: integer
+                    type: object
+                type: object
+              random:
+                description: |-
+                  EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                  "oneof" fields where the API expects an empty JSON object ("{}").
+                type: object
+              rateLimit:
+                description: RateLimitConfig configures rate limiting.
+                properties:
+                  ipAllowedList:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        tenant:
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  noIPAllowedList:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  noPolicies:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  policies:
+                    description: RateLimitPolicies holds a list of rate limit policy
+                      references.
+                    properties:
+                      policies:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                            tenant:
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                    type: object
+                  rateLimiter:
+                    description: RateLimiterInline defines an inline rate limiter.
+                    properties:
+                      burstMultiplier:
+                        format: int32
+                        type: integer
+                      totalNumber:
+                        format: int32
+                        type: integer
+                      unit:
+                        type: string
+                    required:
+                    - burstMultiplier
+                    - totalNumber
+                    - unit
+                    type: object
+                type: object
+              ringHash:
+                description: RingHashConfig configures ring-hash load balancing.
+                properties:
+                  hashPolicy:
+                    items:
+                      description: HashPolicy defines a single hash policy entry for
+                        ring-hash LB.
+                      properties:
+                        cookie:
+                          description: CookieForHashing identifies a cookie used for
+                            ring-hash load balancing.
+                          properties:
+                            name:
+                              type: string
+                            path:
+                              type: string
+                            ttl:
+                              format: int32
+                              type: integer
+                          required:
+                          - name
+                          type: object
+                        headerName:
+                          type: string
+                        sourceIP:
+                          description: |-
+                            EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                            "oneof" fields where the API expects an empty JSON object ("{}").
+                          type: object
+                        terminal:
+                          type: boolean
+                      type: object
+                    type: array
+                type: object
+              roundRobin:
+                description: LB algorithm OneOf
+                type: object
               routes:
                 items:
                   x-kubernetes-preserve-unknown-fields: true
                 type: array
               servicePoliciesFromNamespace:
-                description: |-
-                  Service policies OneOf: servicePoliciesFromNamespace, activeServicePolicies,
-                  noServicePolicies
-                x-kubernetes-preserve-unknown-fields: true
+                description: Service policies OneOf
+                type: object
               sourceIPStickiness:
-                x-kubernetes-preserve-unknown-fields: true
+                description: |-
+                  EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                  "oneof" fields where the API expects an empty JSON object ("{}").
+                type: object
               userIDClientIP:
-                description: 'User ID OneOf: userIDClientIP'
-                x-kubernetes-preserve-unknown-fields: true
+                description: User ID OneOf
+                type: object
               xcNamespace:
                 type: string
             required:

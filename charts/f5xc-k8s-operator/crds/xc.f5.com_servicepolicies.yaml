@@ -51,27 +51,257 @@ spec:
           spec:
             properties:
               allowAllRequests:
-                description: 'Rule choice OneOf: allowAllRequests, allowList, denyAllRequests,
-                  denyList, ruleList'
-                x-kubernetes-preserve-unknown-fields: true
+                description: Rule choice OneOf
+                type: object
               allowList:
-                x-kubernetes-preserve-unknown-fields: true
+                properties:
+                  asnList:
+                    properties:
+                      asNumbers:
+                        items:
+                          format: int32
+                          type: integer
+                        type: array
+                    required:
+                    - asNumbers
+                    type: object
+                  asnSet:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        tenant:
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  countryList:
+                    items:
+                      type: string
+                    type: array
+                  defaultActionAllow:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  defaultActionDeny:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  defaultActionNextPolicy:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  ipPrefixSet:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        tenant:
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  prefixes:
+                    items:
+                      type: string
+                    type: array
+                type: object
               anyServer:
-                description: 'Server choice OneOf: anyServer, serverName, serverNameMatcher,
-                  serverSelector'
-                x-kubernetes-preserve-unknown-fields: true
+                description: Server choice OneOf
+                type: object
               denyAllRequests:
-                x-kubernetes-preserve-unknown-fields: true
+                description: |-
+                  EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                  "oneof" fields where the API expects an empty JSON object ("{}").
+                type: object
               denyList:
-                x-kubernetes-preserve-unknown-fields: true
+                properties:
+                  asnList:
+                    properties:
+                      asNumbers:
+                        items:
+                          format: int32
+                          type: integer
+                        type: array
+                    required:
+                    - asNumbers
+                    type: object
+                  asnSet:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        tenant:
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  countryList:
+                    items:
+                      type: string
+                    type: array
+                  defaultActionAllow:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  defaultActionDeny:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  defaultActionNextPolicy:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  ipPrefixSet:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        tenant:
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  prefixes:
+                    items:
+                      type: string
+                    type: array
+                type: object
               ruleList:
-                x-kubernetes-preserve-unknown-fields: true
+                properties:
+                  rules:
+                    items:
+                      properties:
+                        metadata:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        spec:
+                          properties:
+                            action:
+                              type: string
+                            anyClient:
+                              description: |-
+                                EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                                "oneof" fields where the API expects an empty JSON object ("{}").
+                              type: object
+                            asnMatcher:
+                              description: ASNMatcher matches source autonomous system
+                                numbers.
+                              properties:
+                                asNumbers:
+                                  items:
+                                    format: int32
+                                    type: integer
+                                  type: array
+                              type: object
+                            clientName:
+                              type: string
+                            clientSelector:
+                              description: LabelSelector selects resources by label
+                                expressions.
+                              properties:
+                                expressions:
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - expressions
+                              type: object
+                            headers:
+                              items:
+                                description: HeaderMatcher matches an HTTP request
+                                  header.
+                                properties:
+                                  exact:
+                                    type: string
+                                  invertMatch:
+                                    type: boolean
+                                  name:
+                                    type: string
+                                  presence:
+                                    type: boolean
+                                  regex:
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              type: array
+                            httpMethod:
+                              description: HTTPMethodMatcher matches HTTP request
+                                methods.
+                              properties:
+                                invertMatcher:
+                                  type: boolean
+                                methods:
+                                  items:
+                                    type: string
+                                  type: array
+                              type: object
+                            ipMatcher:
+                              description: IPMatcher matches source IP prefixes.
+                              properties:
+                                invertMatch:
+                                  type: boolean
+                                prefixes:
+                                  items:
+                                    type: string
+                                  type: array
+                              type: object
+                            path:
+                              description: PathMatcher matches an HTTP request path.
+                              properties:
+                                path:
+                                  type: string
+                                prefix:
+                                  type: string
+                                regex:
+                                  type: string
+                              type: object
+                          type: object
+                      type: object
+                    type: array
+                required:
+                - rules
+                type: object
               serverName:
                 type: string
               serverNameMatcher:
-                x-kubernetes-preserve-unknown-fields: true
+                properties:
+                  exactValues:
+                    items:
+                      type: string
+                    type: array
+                  regexValues:
+                    items:
+                      type: string
+                    type: array
+                type: object
               serverSelector:
-                x-kubernetes-preserve-unknown-fields: true
+                properties:
+                  expressions:
+                    items:
+                      type: string
+                    type: array
+                type: object
               xcNamespace:
                 type: string
             required:

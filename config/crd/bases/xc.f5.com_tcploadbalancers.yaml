@@ -52,15 +52,102 @@ spec:
             description: TCPLoadBalancerSpec defines the desired state of a TCPLoadBalancer.
             properties:
               advertiseCustom:
-                x-kubernetes-preserve-unknown-fields: true
+                description: AdvertiseCustom advertises the load balancer on one or
+                  more custom locations.
+                properties:
+                  advertiseWhere:
+                    items:
+                      description: AdvertiseWhere describes a single advertise-where
+                        entry.
+                      properties:
+                        port:
+                          format: int32
+                          type: integer
+                        site:
+                          description: AdvertiseSite describes a site (or virtual-site)
+                            advertise location.
+                          properties:
+                            ipAddress:
+                              type: string
+                            network:
+                              type: string
+                            site:
+                              properties:
+                                name:
+                                  type: string
+                                namespace:
+                                  type: string
+                                tenant:
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                          type: object
+                        useDefaultPort:
+                          description: |-
+                            EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                            "oneof" fields where the API expects an empty JSON object ("{}").
+                          type: object
+                        virtualNetwork:
+                          description: AdvertiseVirtualNetwork describes a virtual-network
+                            advertise location.
+                          properties:
+                            defaultVIP:
+                              description: |-
+                                EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                                "oneof" fields where the API expects an empty JSON object ("{}").
+                              type: object
+                            specificVIP:
+                              type: string
+                          type: object
+                        virtualSite:
+                          description: AdvertiseSite describes a site (or virtual-site)
+                            advertise location.
+                          properties:
+                            ipAddress:
+                              type: string
+                            network:
+                              type: string
+                            site:
+                              properties:
+                                name:
+                                  type: string
+                                namespace:
+                                  type: string
+                                tenant:
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                          type: object
+                      type: object
+                    type: array
+                type: object
               advertiseOnPublic:
-                x-kubernetes-preserve-unknown-fields: true
+                description: AdvertiseOnPublic advertises the load balancer on a specific
+                  public IP.
+                properties:
+                  publicIP:
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      tenant:
+                        type: string
+                    required:
+                    - name
+                    type: object
+                type: object
               advertiseOnPublicDefaultVIP:
                 description: 'Advertise OneOf: advertiseOnPublicDefaultVIP, advertiseOnPublic,
                   advertiseCustom, doNotAdvertise'
-                x-kubernetes-preserve-unknown-fields: true
+                type: object
               doNotAdvertise:
-                x-kubernetes-preserve-unknown-fields: true
+                description: |-
+                  EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                  "oneof" fields where the API expects an empty JSON object ("{}").
+                type: object
               domains:
                 items:
                   type: string
@@ -70,7 +157,7 @@ spec:
                 type: integer
               noTLS:
                 description: 'TLS OneOf: noTLS, tlsParameters, tlsTCPAutoCert'
-                x-kubernetes-preserve-unknown-fields: true
+                type: object
               originPools:
                 items:
                   properties:
@@ -96,9 +183,86 @@ spec:
                   type: object
                 type: array
               tlsParameters:
-                x-kubernetes-preserve-unknown-fields: true
+                description: TLSParameters holds typed TLS configuration for a TCP
+                  load balancer.
+                properties:
+                  customSecurity:
+                    description: CustomTLSSecurity holds a custom TLS cipher suite
+                      list.
+                    properties:
+                      cipherSuites:
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  defaultSecurity:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  lowSecurity:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  mediumSecurity:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  noMTLS:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  tlsCertificates:
+                    items:
+                      description: TLSCertificateRef references a TLS certificate
+                        and its private key.
+                      properties:
+                        certificateURL:
+                          type: string
+                        privateKey:
+                          description: CertificatePrivKey holds private-key material
+                            for a TLS certificate.
+                          properties:
+                            clearSecretInfo:
+                              description: ClearSecretInfo identifies a secret stored
+                                in clear text.
+                              properties:
+                                provider:
+                                  type: string
+                                url:
+                                  type: string
+                              type: object
+                          type: object
+                      type: object
+                    type: array
+                  useMTLS:
+                    description: UseMTLS enables mutual TLS with the given trusted
+                      CA URL.
+                    properties:
+                      trustedCAURL:
+                        type: string
+                    type: object
+                type: object
               tlsTCPAutoCert:
-                x-kubernetes-preserve-unknown-fields: true
+                description: TLSTCPAutoCert holds mTLS configuration for auto-cert
+                  TCP load balancers.
+                properties:
+                  noMTLS:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  useMTLS:
+                    description: UseMTLS enables mutual TLS with the given trusted
+                      CA URL.
+                    properties:
+                      trustedCAURL:
+                        type: string
+                    type: object
+                type: object
               xcNamespace:
                 type: string
             required:
