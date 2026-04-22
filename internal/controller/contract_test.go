@@ -1177,3 +1177,191 @@ func TestContract_TCPLoadBalancerCRDLifecycle_DoNotAdvertise(t *testing.T) {
 	_, err = xcClient.GetTCPLoadBalancer(context.Background(), xcNS, "contract-tlb-noadv")
 	assert.ErrorIs(t, err, xcclient.ErrNotFound)
 }
+
+// ---------------------------------------------------------------------------
+// APIDefinition — full lifecycle
+// ---------------------------------------------------------------------------
+
+func TestContract_APIDefinitionCRDLifecycle(t *testing.T) {
+	xcClient := contractXCClient(t)
+	xcNS := contractNamespace(t)
+	setupSuite(t)
+	cs := xcclientset.New(xcClient)
+
+	reconciler := &APIDefinitionReconciler{
+		Log:       ctrl.Log.WithName("contract"),
+		ClientSet: cs,
+	}
+	startManagerFor(t, func(mgr ctrl.Manager) error {
+		reconciler.Client = mgr.GetClient()
+		return reconciler.SetupWithManager(mgr)
+	})
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-apidef"}}
+	require.NoError(t, testClient.Create(testCtx, ns))
+	_ = xcClient.DeleteAPIDefinition(context.Background(), xcNS, "contract-apidef")
+	time.Sleep(2 * time.Second)
+
+	cr := &v1alpha1.APIDefinition{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contract-apidef",
+			Namespace: "contract-apidef",
+		},
+		Spec: v1alpha1.APIDefinitionSpec{
+			XCNamespace:       xcNS,
+			MixedSchemaOrigin: &v1alpha1.EmptyObject{},
+		},
+	}
+	require.NoError(t, testClient.Create(testCtx, cr))
+
+	result := waitForAPIDefinitionConditionResult(t, types.NamespacedName{Name: "contract-apidef", Namespace: "contract-apidef"}, v1alpha1.ConditionReady, metav1.ConditionTrue, 30*time.Second)
+	require.NotNil(t, result)
+	assert.NotEmpty(t, result.Status.XCUID)
+
+	obj, err := xcClient.GetAPIDefinition(context.Background(), xcNS, "contract-apidef")
+	require.NoError(t, err)
+	assert.NotNil(t, obj)
+
+	require.NoError(t, testClient.Delete(testCtx, cr))
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		_, err := xcClient.GetAPIDefinition(context.Background(), xcNS, "contract-apidef")
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	_, err = xcClient.GetAPIDefinition(context.Background(), xcNS, "contract-apidef")
+	assert.ErrorIs(t, err, xcclient.ErrNotFound)
+}
+
+// ---------------------------------------------------------------------------
+// UserIdentification — full lifecycle
+// ---------------------------------------------------------------------------
+
+func TestContract_UserIdentificationCRDLifecycle(t *testing.T) {
+	xcClient := contractXCClient(t)
+	xcNS := contractNamespace(t)
+	setupSuite(t)
+	cs := xcclientset.New(xcClient)
+
+	reconciler := &UserIdentificationReconciler{
+		Log:       ctrl.Log.WithName("contract"),
+		ClientSet: cs,
+	}
+	startManagerFor(t, func(mgr ctrl.Manager) error {
+		reconciler.Client = mgr.GetClient()
+		return reconciler.SetupWithManager(mgr)
+	})
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-uid"}}
+	require.NoError(t, testClient.Create(testCtx, ns))
+	_ = xcClient.DeleteUserIdentification(context.Background(), xcNS, "contract-uid")
+	time.Sleep(2 * time.Second)
+
+	cr := &v1alpha1.UserIdentification{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contract-uid",
+			Namespace: "contract-uid",
+		},
+		Spec: v1alpha1.UserIdentificationSpec{
+			XCNamespace: xcNS,
+			Rules: []v1alpha1.UserIdentificationRule{
+				{ClientIP: &v1alpha1.EmptyObject{}},
+			},
+		},
+	}
+	require.NoError(t, testClient.Create(testCtx, cr))
+
+	result := waitForUserIdentificationConditionResult(t, types.NamespacedName{Name: "contract-uid", Namespace: "contract-uid"}, v1alpha1.ConditionReady, metav1.ConditionTrue, 30*time.Second)
+	require.NotNil(t, result)
+	assert.NotEmpty(t, result.Status.XCUID)
+
+	obj, err := xcClient.GetUserIdentification(context.Background(), xcNS, "contract-uid")
+	require.NoError(t, err)
+	assert.NotNil(t, obj)
+
+	require.NoError(t, testClient.Delete(testCtx, cr))
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		_, err := xcClient.GetUserIdentification(context.Background(), xcNS, "contract-uid")
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	_, err = xcClient.GetUserIdentification(context.Background(), xcNS, "contract-uid")
+	assert.ErrorIs(t, err, xcclient.ErrNotFound)
+}
+
+// ---------------------------------------------------------------------------
+// MaliciousUserMitigation — full lifecycle
+// ---------------------------------------------------------------------------
+
+func TestContract_MaliciousUserMitigationCRDLifecycle(t *testing.T) {
+	xcClient := contractXCClient(t)
+	xcNS := contractNamespace(t)
+	setupSuite(t)
+	cs := xcclientset.New(xcClient)
+
+	reconciler := &MaliciousUserMitigationReconciler{
+		Log:       ctrl.Log.WithName("contract"),
+		ClientSet: cs,
+	}
+	startManagerFor(t, func(mgr ctrl.Manager) error {
+		reconciler.Client = mgr.GetClient()
+		return reconciler.SetupWithManager(mgr)
+	})
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-mum"}}
+	require.NoError(t, testClient.Create(testCtx, ns))
+	_ = xcClient.DeleteMaliciousUserMitigation(context.Background(), xcNS, "contract-mum")
+	time.Sleep(2 * time.Second)
+
+	cr := &v1alpha1.MaliciousUserMitigation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contract-mum",
+			Namespace: "contract-mum",
+		},
+		Spec: v1alpha1.MaliciousUserMitigationSpec{
+			XCNamespace: xcNS,
+			MitigationType: &v1alpha1.MaliciousUserMitigationType{
+				Rules: []v1alpha1.MaliciousUserMitigationRule{
+					{
+						ThreatLevel:      v1alpha1.MaliciousUserThreatLevel{Low: &v1alpha1.EmptyObject{}},
+						MitigationAction: v1alpha1.MaliciousUserMitigationAction{JavascriptChallenge: &v1alpha1.EmptyObject{}},
+					},
+					{
+						ThreatLevel:      v1alpha1.MaliciousUserThreatLevel{Medium: &v1alpha1.EmptyObject{}},
+						MitigationAction: v1alpha1.MaliciousUserMitigationAction{CaptchaChallenge: &v1alpha1.EmptyObject{}},
+					},
+					{
+						ThreatLevel:      v1alpha1.MaliciousUserThreatLevel{High: &v1alpha1.EmptyObject{}},
+						MitigationAction: v1alpha1.MaliciousUserMitigationAction{BlockTemporarily: &v1alpha1.EmptyObject{}},
+					},
+				},
+			},
+		},
+	}
+	require.NoError(t, testClient.Create(testCtx, cr))
+
+	result := waitForMaliciousUserMitigationConditionResult(t, types.NamespacedName{Name: "contract-mum", Namespace: "contract-mum"}, v1alpha1.ConditionReady, metav1.ConditionTrue, 30*time.Second)
+	require.NotNil(t, result)
+	assert.NotEmpty(t, result.Status.XCUID)
+
+	obj, err := xcClient.GetMaliciousUserMitigation(context.Background(), xcNS, "contract-mum")
+	require.NoError(t, err)
+	assert.NotNil(t, obj)
+
+	require.NoError(t, testClient.Delete(testCtx, cr))
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		_, err := xcClient.GetMaliciousUserMitigation(context.Background(), xcNS, "contract-mum")
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	_, err = xcClient.GetMaliciousUserMitigation(context.Background(), xcNS, "contract-mum")
+	assert.ErrorIs(t, err, xcclient.ErrNotFound)
+}
