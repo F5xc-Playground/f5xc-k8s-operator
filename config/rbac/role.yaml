@@ -41,14 +41,17 @@ rules:
 - apiGroups:
   - xc.f5.com
   resources:
+  - apidefinitions
   - appfirewalls
   - certificates
   - healthchecks
   - httploadbalancers
+  - malicioususermitigations
   - originpools
   - ratelimiters
   - servicepolicies
   - tcploadbalancers
+  - useridentifications
   verbs:
   - create
   - delete
@@ -60,27 +63,33 @@ rules:
 - apiGroups:
   - xc.f5.com
   resources:
+  - apidefinitions/finalizers
   - appfirewalls/finalizers
   - certificates/finalizers
   - healthchecks/finalizers
   - httploadbalancers/finalizers
+  - malicioususermitigations/finalizers
   - originpools/finalizers
   - ratelimiters/finalizers
   - servicepolicies/finalizers
   - tcploadbalancers/finalizers
+  - useridentifications/finalizers
   verbs:
   - update
 - apiGroups:
   - xc.f5.com
   resources:
+  - apidefinitions/status
   - appfirewalls/status
   - certificates/status
   - healthchecks/status
   - httploadbalancers/status
+  - malicioususermitigations/status
   - originpools/status
   - ratelimiters/status
   - servicepolicies/status
   - tcploadbalancers/status
+  - useridentifications/status
   verbs:
   - get
   - patch

@@ -162,6 +162,53 @@ spec:
               advertiseOnPublicDefaultVIP:
                 description: Advertise OneOf
                 type: object
+              apiSpecification:
+                description: APISpecificationConfig wraps an APIDefinition reference
+                  with validation settings.
+                properties:
+                  apiDefinition:
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      tenant:
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  validationAllSpecEndpoints:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                  validationCustomList:
+                    description: ValidationCustomList holds a custom list of endpoint
+                      validations.
+                    properties:
+                      endpointValidationList:
+                        items:
+                          description: APIOperation identifies an API endpoint by
+                            HTTP method and path.
+                          properties:
+                            method:
+                              type: string
+                            path:
+                              type: string
+                          required:
+                          - method
+                          - path
+                          type: object
+                        type: array
+                    type: object
+                  validationDisabled:
+                    description: |-
+                      EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                      "oneof" fields where the API expects an empty JSON object ("{}").
+                    type: object
+                required:
+                - apiDefinition
+                type: object
               appFirewall:
                 properties:
                   name:
@@ -303,6 +350,9 @@ spec:
                   - pool
                   type: object
                 type: array
+              disableAPIDefinition:
+                description: API definition OneOf
+                type: object
               disableAPIDiscovery:
                 description: API discovery OneOf
                 type: object
@@ -311,6 +361,9 @@ spec:
                 type: object
               disableIPReputation:
                 description: IP reputation OneOf
+                type: object
+              disableMaliciousUserDetection:
+                description: Malicious user detection OneOf
                 type: object
               disableRateLimit:
                 description: Rate limit OneOf
@@ -398,6 +451,11 @@ spec:
                     items:
                       type: string
                     type: array
+                type: object
+              enableMaliciousUserDetection:
+                description: |-
+                  EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
+                  "oneof" fields where the API expects an empty JSON object ("{}").
                 type: object
               http:
                 description: TLS OneOf
@@ -566,6 +624,17 @@ spec:
                       EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
                       "oneof" fields where the API expects an empty JSON object ("{}").
                     type: object
+                  maliciousUserMitigation:
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      tenant:
+                        type: string
+                    required:
+                    - name
+                    type: object
                   maliciousUserMitigationBypass:
                     description: |-
                       EmptyObject is a named empty struct used as a sentinel/flag value in F5XC
@@ -723,6 +792,17 @@ spec:
                 type: object
               userIDClientIP:
                 description: User ID OneOf
+                type: object
+              userIdentification:
+                properties:
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  tenant:
+                    type: string
+                required:
+                - name
                 type: object
               xcNamespace:
                 type: string
