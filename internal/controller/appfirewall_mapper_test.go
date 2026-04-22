@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kreynolds/f5xc-k8s-operator/api/v1alpha1"
@@ -17,7 +16,7 @@ func sampleAppFirewall(name, namespace string) *v1alpha1.AppFirewall {
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: v1alpha1.AppFirewallSpec{
 			XCNamespace: namespace,
-			Blocking:    &apiextensionsv1.JSON{Raw: []byte("{}")},
+			Blocking:    &v1alpha1.EmptyObject{},
 		},
 	}
 }
@@ -36,15 +35,15 @@ func TestBuildAppFirewallCreate_MultipleOneOfGroups(t *testing.T) {
 	cr := &v1alpha1.AppFirewall{
 		ObjectMeta: metav1.ObjectMeta{Name: "afw-multi", Namespace: "ns"},
 		Spec: v1alpha1.AppFirewallSpec{
-			Blocking:               &apiextensionsv1.JSON{Raw: []byte(`{"mode":"blocking"}`)},
-			UseDefaultBlockingPage: &apiextensionsv1.JSON{Raw: []byte(`{}`)},
-			DefaultBotSetting:      &apiextensionsv1.JSON{Raw: []byte(`{}`)},
-			DefaultAnonymization:   &apiextensionsv1.JSON{Raw: []byte(`{}`)},
+			Blocking:               &v1alpha1.EmptyObject{},
+			UseDefaultBlockingPage: &v1alpha1.EmptyObject{},
+			DefaultBotSetting:      &v1alpha1.EmptyObject{},
+			DefaultAnonymization:   &v1alpha1.EmptyObject{},
 		},
 	}
 
 	result := buildAppFirewallCreate(cr, "ns")
-	assert.JSONEq(t, `{"mode":"blocking"}`, string(result.Spec.Blocking))
+	assert.JSONEq(t, `{}`, string(result.Spec.Blocking))
 	assert.JSONEq(t, `{}`, string(result.Spec.UseDefaultBlockingPage))
 	assert.JSONEq(t, `{}`, string(result.Spec.DefaultBotSetting))
 	assert.JSONEq(t, `{}`, string(result.Spec.DefaultAnonymization))
@@ -71,7 +70,7 @@ func TestBuildAppFirewallDesiredSpecJSON(t *testing.T) {
 	cr := &v1alpha1.AppFirewall{
 		ObjectMeta: metav1.ObjectMeta{Name: "my-afw", Namespace: "ns"},
 		Spec: v1alpha1.AppFirewallSpec{
-			Blocking: &apiextensionsv1.JSON{Raw: []byte(`{"mode":"blocking"}`)},
+			Blocking: &v1alpha1.EmptyObject{},
 		},
 	}
 
@@ -84,4 +83,60 @@ func TestBuildAppFirewallDesiredSpecJSON(t *testing.T) {
 	assert.True(t, hasBlocking)
 	_, hasMetadata := spec["metadata"]
 	assert.False(t, hasMetadata, "spec JSON must not contain metadata")
+}
+
+func TestBuildAppFirewallCreate_DetectionSettings(t *testing.T) {
+	cr := &v1alpha1.AppFirewall{
+		ObjectMeta: metav1.ObjectMeta{Name: "afw-detect", Namespace: "ns"},
+		Spec: v1alpha1.AppFirewallSpec{
+			DetectionSettings: &v1alpha1.DetectionSettings{
+				EnableSuppression:     &v1alpha1.EmptyObject{},
+				EnableThreatCampaigns: &v1alpha1.EmptyObject{},
+				SignatureSelectionSetting: &v1alpha1.SignatureSelectionSetting{
+					DefaultAttackTypeSettings:  &v1alpha1.EmptyObject{},
+					OnlyHighAccuracySignatures: &v1alpha1.EmptyObject{},
+				},
+			},
+			Blocking: &v1alpha1.EmptyObject{},
+		},
+	}
+
+	result := buildAppFirewallCreate(cr, "ns")
+	assert.NotNil(t, result.Spec.DetectionSettings)
+	assert.Nil(t, result.Spec.DefaultDetectionSettings)
+
+	var ds map[string]interface{}
+	require.NoError(t, json.Unmarshal(result.Spec.DetectionSettings, &ds))
+	_, hasEnable := ds["enable_suppression"]
+	assert.True(t, hasEnable)
+}
+
+func TestBuildAppFirewallCreate_BotProtectionSetting(t *testing.T) {
+	cr := &v1alpha1.AppFirewall{
+		ObjectMeta: metav1.ObjectMeta{Name: "afw-bot", Namespace: "ns"},
+		Spec: v1alpha1.AppFirewallSpec{
+			Blocking: &v1alpha1.EmptyObject{},
+			BotProtectionSetting: &v1alpha1.BotProtectionSetting{
+				MaliciousBotAction:  "BLOCK",
+				SuspiciousBotAction: "FLAG",
+				GoodBotAction:       "REPORT",
+			},
+		},
+	}
+
+	result := buildAppFirewallCreate(cr, "ns")
+	assert.JSONEq(t, `{"malicious_bot_action":"BLOCK","suspicious_bot_action":"FLAG","good_bot_action":"REPORT"}`, string(result.Spec.BotProtectionSetting))
+}
+
+func TestBuildAppFirewallCreate_AllowedResponseCodes(t *testing.T) {
+	cr := &v1alpha1.AppFirewall{
+		ObjectMeta: metav1.ObjectMeta{Name: "afw-codes", Namespace: "ns"},
+		Spec: v1alpha1.AppFirewallSpec{
+			Blocking:             &v1alpha1.EmptyObject{},
+			AllowedResponseCodes: &v1alpha1.AllowedResponseCodes{ResponseCode: []int{200, 201, 204}},
+		},
+	}
+
+	result := buildAppFirewallCreate(cr, "ns")
+	assert.JSONEq(t, `{"response_code":[200,201,204]}`, string(result.Spec.AllowedResponseCodes))
 }
