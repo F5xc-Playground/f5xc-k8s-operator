@@ -145,3 +145,80 @@ func TestBuildHTTPLoadBalancerDesiredSpecJSON(t *testing.T) {
 	_, hasMetadata := spec["metadata"]
 	assert.False(t, hasMetadata, "spec JSON must not contain metadata")
 }
+
+func TestMapHTTPLoadBalancerSpec_UserIdentification(t *testing.T) {
+	cr := &v1alpha1.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{Name: "hlb-uid", Namespace: "ns"},
+		Spec: v1alpha1.HTTPLoadBalancerSpec{
+			XCNamespace:        "ns",
+			Domains:            []string{"test.com"},
+			UserIdentification: &v1alpha1.ObjectRef{Name: "my-uid-policy", Namespace: "ns"},
+		},
+	}
+	result := buildHTTPLoadBalancerCreate(cr, "ns")
+	require.NotNil(t, result.Spec.UserIdentification)
+	assert.Equal(t, "my-uid-policy", result.Spec.UserIdentification.Name)
+}
+
+func TestMapHTTPLoadBalancerSpec_DisableAPIDefinition(t *testing.T) {
+	cr := &v1alpha1.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{Name: "hlb-no-api", Namespace: "ns"},
+		Spec: v1alpha1.HTTPLoadBalancerSpec{
+			XCNamespace:          "ns",
+			Domains:              []string{"test.com"},
+			DisableAPIDefinition: &v1alpha1.EmptyObject{},
+		},
+	}
+	result := buildHTTPLoadBalancerCreate(cr, "ns")
+	assert.JSONEq(t, `{}`, string(result.Spec.DisableAPIDefinition))
+	assert.Nil(t, result.Spec.APISpecification)
+}
+
+func TestMapHTTPLoadBalancerSpec_APISpecification(t *testing.T) {
+	cr := &v1alpha1.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{Name: "hlb-apispec", Namespace: "ns"},
+		Spec: v1alpha1.HTTPLoadBalancerSpec{
+			XCNamespace: "ns",
+			Domains:     []string{"test.com"},
+			APISpecification: &v1alpha1.APISpecificationConfig{
+				APIDefinition:      &v1alpha1.ObjectRef{Name: "my-apidef", Namespace: "ns"},
+				ValidationDisabled: &v1alpha1.EmptyObject{},
+			},
+		},
+	}
+	result := buildHTTPLoadBalancerCreate(cr, "ns")
+	assert.NotNil(t, result.Spec.APISpecification)
+	assert.Contains(t, string(result.Spec.APISpecification), "my-apidef")
+	assert.Contains(t, string(result.Spec.APISpecification), "validation_disabled")
+}
+
+func TestMapHTTPLoadBalancerSpec_MaliciousUserDetection(t *testing.T) {
+	cr := &v1alpha1.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{Name: "hlb-mud", Namespace: "ns"},
+		Spec: v1alpha1.HTTPLoadBalancerSpec{
+			XCNamespace:                  "ns",
+			Domains:                      []string{"test.com"},
+			EnableMaliciousUserDetection: &v1alpha1.EmptyObject{},
+		},
+	}
+	result := buildHTTPLoadBalancerCreate(cr, "ns")
+	assert.JSONEq(t, `{}`, string(result.Spec.EnableMaliciousUserDetection))
+	assert.Nil(t, result.Spec.DisableMaliciousUserDetection)
+}
+
+func TestMapHTTPLoadBalancerSpec_PolicyBasedChallengeWithMitigation(t *testing.T) {
+	cr := &v1alpha1.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{Name: "hlb-pbc-mum", Namespace: "ns"},
+		Spec: v1alpha1.HTTPLoadBalancerSpec{
+			XCNamespace: "ns",
+			Domains:     []string{"test.com"},
+			PolicyBasedChallenge: &v1alpha1.PolicyBasedChallengeConfig{
+				MaliciousUserMitigation: &v1alpha1.ObjectRef{Name: "my-mum", Namespace: "ns"},
+			},
+		},
+	}
+	result := buildHTTPLoadBalancerCreate(cr, "ns")
+	assert.NotNil(t, result.Spec.PolicyBasedChallenge)
+	assert.Contains(t, string(result.Spec.PolicyBasedChallenge), "malicious_user_mitigation")
+	assert.Contains(t, string(result.Spec.PolicyBasedChallenge), "my-mum")
+}

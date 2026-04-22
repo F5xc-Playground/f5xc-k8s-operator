@@ -159,6 +159,7 @@ type xcPolicyBasedChallengeConfig struct {
 	AlwaysEnableCaptcha               *v1alpha1.EmptyObject     `json:"always_enable_captcha,omitempty"`
 	NoChallenge                       *v1alpha1.EmptyObject     `json:"no_challenge,omitempty"`
 	MaliciousUserMitigationBypass     *v1alpha1.EmptyObject     `json:"malicious_user_mitigation_bypass,omitempty"`
+	MaliciousUserMitigation           *xcObjectRef              `json:"malicious_user_mitigation,omitempty"`
 	RuleList                          *xcChallengeRuleList      `json:"rule_list,omitempty"`
 	TemporaryBlockingParameters       *xcTemporaryBlockingParams `json:"temporary_blocking_parameters,omitempty"`
 }
@@ -205,6 +206,17 @@ type xcCookieForHashing struct {
 
 type xcActiveServicePoliciesConfig struct {
 	Policies []xcObjectRef `json:"policies"`
+}
+
+type xcAPISpecificationConfig struct {
+	APIDefinition              *xcObjectRef            `json:"api_definition"`
+	ValidationDisabled         *v1alpha1.EmptyObject   `json:"validation_disabled,omitempty"`
+	ValidationAllSpecEndpoints *v1alpha1.EmptyObject   `json:"validation_all_spec_endpoints,omitempty"`
+	ValidationCustomList       *xcValidationCustomList `json:"validation_custom_list,omitempty"`
+}
+
+type xcValidationCustomList struct {
+	EndpointValidationList []xcAPIOperation `json:"endpoint_validation_list,omitempty"`
 }
 
 // ---------------------------------------------------------------------------
@@ -341,6 +353,25 @@ func mapHTTPLoadBalancerSpec(spec *v1alpha1.HTTPLoadBalancerSpec) xcclient.HTTPL
 	if spec.UserIDClientIP != nil {
 		out.UserIDClientIP = emptyObjectJSON
 	}
+	if spec.UserIdentification != nil {
+		out.UserIdentification = mapObjectRefPtr(spec.UserIdentification)
+	}
+
+	// API definition OneOf
+	if spec.DisableAPIDefinition != nil {
+		out.DisableAPIDefinition = emptyObjectJSON
+	}
+	if spec.APISpecification != nil {
+		out.APISpecification = mapAPISpecificationConfig(spec.APISpecification)
+	}
+
+	// Malicious user detection OneOf
+	if spec.DisableMaliciousUserDetection != nil {
+		out.DisableMaliciousUserDetection = emptyObjectJSON
+	}
+	if spec.EnableMaliciousUserDetection != nil {
+		out.EnableMaliciousUserDetection = emptyObjectJSON
+	}
 
 	return out
 }
@@ -435,6 +466,7 @@ func mapPolicyBasedChallengeConfig(pbc *v1alpha1.PolicyBasedChallengeConfig) jso
 		AlwaysEnableCaptcha:           pbc.AlwaysEnableCaptcha,
 		NoChallenge:                   pbc.NoChallenge,
 		MaliciousUserMitigationBypass: pbc.MaliciousUserMitigationBypass,
+		MaliciousUserMitigation:       mapXCObjectRef(pbc.MaliciousUserMitigation),
 	}
 	if pbc.DefaultJSChallengeParameters != nil {
 		wire.DefaultJSChallengeParameters = &xcJSChallengeConfig{
@@ -462,6 +494,20 @@ func mapPolicyBasedChallengeConfig(pbc *v1alpha1.PolicyBasedChallengeConfig) jso
 	}
 	if pbc.TemporaryBlockingParameters != nil {
 		wire.TemporaryBlockingParameters = &xcTemporaryBlockingParams{Duration: pbc.TemporaryBlockingParameters.Duration}
+	}
+	return marshalJSON(wire)
+}
+
+func mapAPISpecificationConfig(as *v1alpha1.APISpecificationConfig) json.RawMessage {
+	wire := xcAPISpecificationConfig{
+		APIDefinition:              mapXCObjectRef(as.APIDefinition),
+		ValidationDisabled:         as.ValidationDisabled,
+		ValidationAllSpecEndpoints: as.ValidationAllSpecEndpoints,
+	}
+	if as.ValidationCustomList != nil {
+		wire.ValidationCustomList = &xcValidationCustomList{
+			EndpointValidationList: mapXCAPIOperations(as.ValidationCustomList.EndpointValidationList),
+		}
 	}
 	return marshalJSON(wire)
 }
