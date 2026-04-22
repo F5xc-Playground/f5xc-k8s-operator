@@ -67,6 +67,13 @@ type XCClient interface {
 	DeleteCertificate(ctx context.Context, ns, name string) error
 	ListCertificates(ctx context.Context, ns string) ([]*Certificate, error)
 
+	// APIDefinition
+	CreateAPIDefinition(ctx context.Context, ns string, ad *APIDefinitionCreate) (*APIDefinition, error)
+	GetAPIDefinition(ctx context.Context, ns, name string) (*APIDefinition, error)
+	ReplaceAPIDefinition(ctx context.Context, ns, name string, ad *APIDefinitionReplace) (*APIDefinition, error)
+	DeleteAPIDefinition(ctx context.Context, ns, name string) error
+	ListAPIDefinitions(ctx context.Context, ns string) ([]*APIDefinition, error)
+
 	// Diff helper
 	ClientNeedsUpdate(current, desired json.RawMessage) (bool, error)
 }

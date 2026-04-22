@@ -233,6 +233,22 @@ func (f *fakeXCClient) ListCertificates(_ context.Context, ns string) ([]*xcclie
 	return nil, nil
 }
 
+func (f *fakeXCClient) CreateAPIDefinition(_ context.Context, ns string, ad *xcclient.APIDefinitionCreate) (*xcclient.APIDefinition, error) {
+	return nil, nil
+}
+func (f *fakeXCClient) GetAPIDefinition(_ context.Context, ns, name string) (*xcclient.APIDefinition, error) {
+	return nil, nil
+}
+func (f *fakeXCClient) ReplaceAPIDefinition(_ context.Context, ns, name string, ad *xcclient.APIDefinitionReplace) (*xcclient.APIDefinition, error) {
+	return nil, nil
+}
+func (f *fakeXCClient) DeleteAPIDefinition(_ context.Context, ns, name string) error {
+	return nil
+}
+func (f *fakeXCClient) ListAPIDefinitions(_ context.Context, ns string) ([]*xcclient.APIDefinition, error) {
+	return nil, nil
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
