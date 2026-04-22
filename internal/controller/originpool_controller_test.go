@@ -249,6 +249,22 @@ func (f *fakeXCClient) ListAPIDefinitions(_ context.Context, ns string) ([]*xccl
 	return nil, nil
 }
 
+func (f *fakeXCClient) CreateUserIdentification(_ context.Context, ns string, ui *xcclient.UserIdentificationCreate) (*xcclient.UserIdentification, error) {
+	return nil, nil
+}
+func (f *fakeXCClient) GetUserIdentification(_ context.Context, ns, name string) (*xcclient.UserIdentification, error) {
+	return nil, nil
+}
+func (f *fakeXCClient) ReplaceUserIdentification(_ context.Context, ns, name string, ui *xcclient.UserIdentificationReplace) (*xcclient.UserIdentification, error) {
+	return nil, nil
+}
+func (f *fakeXCClient) DeleteUserIdentification(_ context.Context, ns, name string) error {
+	return nil
+}
+func (f *fakeXCClient) ListUserIdentifications(_ context.Context, ns string) ([]*xcclient.UserIdentification, error) {
+	return nil, nil
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

@@ -74,6 +74,13 @@ type XCClient interface {
 	DeleteAPIDefinition(ctx context.Context, ns, name string) error
 	ListAPIDefinitions(ctx context.Context, ns string) ([]*APIDefinition, error)
 
+	// UserIdentification
+	CreateUserIdentification(ctx context.Context, ns string, ui *UserIdentificationCreate) (*UserIdentification, error)
+	GetUserIdentification(ctx context.Context, ns, name string) (*UserIdentification, error)
+	ReplaceUserIdentification(ctx context.Context, ns, name string, ui *UserIdentificationReplace) (*UserIdentification, error)
+	DeleteUserIdentification(ctx context.Context, ns, name string) error
+	ListUserIdentifications(ctx context.Context, ns string) ([]*UserIdentification, error)
+
 	// Diff helper
 	ClientNeedsUpdate(current, desired json.RawMessage) (bool, error)
 }
