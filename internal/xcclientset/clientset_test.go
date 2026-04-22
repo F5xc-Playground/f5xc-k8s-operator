@@ -137,6 +137,51 @@ func (f *fakeClient) ListCertificates(_ context.Context, _ string) ([]*xcclient.
 	return nil, nil
 }
 
+// APIDefinition
+func (f *fakeClient) CreateAPIDefinition(_ context.Context, _ string, _ *xcclient.APIDefinitionCreate) (*xcclient.APIDefinition, error) {
+	return nil, nil
+}
+func (f *fakeClient) GetAPIDefinition(_ context.Context, _, _ string) (*xcclient.APIDefinition, error) {
+	return nil, nil
+}
+func (f *fakeClient) ReplaceAPIDefinition(_ context.Context, _, _ string, _ *xcclient.APIDefinitionReplace) (*xcclient.APIDefinition, error) {
+	return nil, nil
+}
+func (f *fakeClient) DeleteAPIDefinition(_ context.Context, _, _ string) error { return nil }
+func (f *fakeClient) ListAPIDefinitions(_ context.Context, _ string) ([]*xcclient.APIDefinition, error) {
+	return nil, nil
+}
+
+// UserIdentification
+func (f *fakeClient) CreateUserIdentification(_ context.Context, _ string, _ *xcclient.UserIdentificationCreate) (*xcclient.UserIdentification, error) {
+	return nil, nil
+}
+func (f *fakeClient) GetUserIdentification(_ context.Context, _, _ string) (*xcclient.UserIdentification, error) {
+	return nil, nil
+}
+func (f *fakeClient) ReplaceUserIdentification(_ context.Context, _, _ string, _ *xcclient.UserIdentificationReplace) (*xcclient.UserIdentification, error) {
+	return nil, nil
+}
+func (f *fakeClient) DeleteUserIdentification(_ context.Context, _, _ string) error { return nil }
+func (f *fakeClient) ListUserIdentifications(_ context.Context, _ string) ([]*xcclient.UserIdentification, error) {
+	return nil, nil
+}
+
+// MaliciousUserMitigation
+func (f *fakeClient) CreateMaliciousUserMitigation(_ context.Context, _ string, _ *xcclient.MaliciousUserMitigationCreate) (*xcclient.MaliciousUserMitigation, error) {
+	return nil, nil
+}
+func (f *fakeClient) GetMaliciousUserMitigation(_ context.Context, _, _ string) (*xcclient.MaliciousUserMitigation, error) {
+	return nil, nil
+}
+func (f *fakeClient) ReplaceMaliciousUserMitigation(_ context.Context, _, _ string, _ *xcclient.MaliciousUserMitigationReplace) (*xcclient.MaliciousUserMitigation, error) {
+	return nil, nil
+}
+func (f *fakeClient) DeleteMaliciousUserMitigation(_ context.Context, _, _ string) error { return nil }
+func (f *fakeClient) ListMaliciousUserMitigations(_ context.Context, _ string) ([]*xcclient.MaliciousUserMitigation, error) {
+	return nil, nil
+}
+
 // Diff helper
 func (f *fakeClient) ClientNeedsUpdate(_, _ json.RawMessage) (bool, error) { return false, nil }
 
