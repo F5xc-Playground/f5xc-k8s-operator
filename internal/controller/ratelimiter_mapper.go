@@ -35,8 +35,9 @@ func buildRateLimiterDesiredSpecJSON(cr *v1alpha1.RateLimiter, xcNamespace strin
 
 func mapRateLimiterSpec(spec *v1alpha1.RateLimiterSpec) xcclient.XCRateLimiterSpec {
 	val := xcclient.RateLimitValue{
-		TotalNumber: spec.Threshold,
-		Unit:        spec.Unit,
+		TotalNumber:     spec.Threshold,
+		Unit:            spec.Unit,
+		BurstMultiplier: 1,
 	}
 	if spec.BurstMultiplier != nil {
 		val.BurstMultiplier = *spec.BurstMultiplier

@@ -25,7 +25,7 @@ func TestBuildRateLimiterCreate_BasicFields(t *testing.T) {
 	require.Len(t, result.Spec.Limits, 1)
 	assert.Equal(t, uint32(100), result.Spec.Limits[0].TotalNumber)
 	assert.Equal(t, "MINUTE", result.Spec.Limits[0].Unit)
-	assert.Equal(t, uint32(0), result.Spec.Limits[0].BurstMultiplier)
+	assert.Equal(t, uint32(1), result.Spec.Limits[0].BurstMultiplier)
 }
 
 func TestBuildRateLimiterCreate_WithBurstMultiplier(t *testing.T) {

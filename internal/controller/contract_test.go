@@ -379,6 +379,8 @@ func TestContract_TCPLoadBalancerCRDLifecycle(t *testing.T) {
 	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-tlb"}}
 	require.NoError(t, testClient.Create(testCtx, ns))
 
+	contractEnsureOriginPool(t, xcClient, xcNS, "contract-pool-tlb")
+
 	// Clean up any leftover from a previous run.
 	_ = xcClient.DeleteTCPLoadBalancer(context.Background(), xcNS, "contract-tlb")
 	time.Sleep(2 * time.Second)
@@ -390,11 +392,12 @@ func TestContract_TCPLoadBalancerCRDLifecycle(t *testing.T) {
 		},
 		Spec: v1alpha1.TCPLoadBalancerSpec{
 			XCNamespace: xcNS,
-			Domains:     []string{"tcp.test.com"},
+			Domains:     []string{"contract-tlb.k8s-op-test.example.com"},
 			ListenPort:  443,
 			OriginPools: []v1alpha1.RoutePool{
-				{Pool: v1alpha1.ObjectRef{Name: "test-pool"}, Weight: uint32Ptr(1)},
+				{Pool: v1alpha1.ObjectRef{Name: "contract-pool-tlb"}, Weight: uint32Ptr(1)},
 			},
+			DoNotAdvertise: &v1alpha1.EmptyObject{},
 		},
 	}
 	require.NoError(t, testClient.Create(testCtx, cr))
@@ -443,6 +446,8 @@ func TestContract_HTTPLoadBalancerCRDLifecycle(t *testing.T) {
 	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-hlb"}}
 	require.NoError(t, testClient.Create(testCtx, ns))
 
+	contractEnsureOriginPool(t, xcClient, xcNS, "contract-pool-hlb")
+
 	// Clean up any leftover from a previous run.
 	_ = xcClient.DeleteHTTPLoadBalancer(context.Background(), xcNS, "contract-hlb")
 	time.Sleep(2 * time.Second)
@@ -454,12 +459,12 @@ func TestContract_HTTPLoadBalancerCRDLifecycle(t *testing.T) {
 		},
 		Spec: v1alpha1.HTTPLoadBalancerSpec{
 			XCNamespace: xcNS,
-			Domains:     []string{"http.test.com"},
-			HTTP:        &v1alpha1.HTTPConfig{DNSVolterraManaged: true},
+			Domains:     []string{"contract-hlb.k8s-op-test.example.com"},
+			HTTP:        &v1alpha1.HTTPConfig{},
 			DefaultRoutePools: []v1alpha1.RoutePool{
-				{Pool: v1alpha1.ObjectRef{Name: "test-pool"}, Weight: uint32Ptr(1)},
+				{Pool: v1alpha1.ObjectRef{Name: "contract-pool-hlb"}, Weight: uint32Ptr(1)},
 			},
-			AdvertiseOnPublicDefaultVIP: &v1alpha1.EmptyObject{},
+			DoNotAdvertise: &v1alpha1.EmptyObject{},
 		},
 	}
 	require.NoError(t, testClient.Create(testCtx, cr))
@@ -491,8 +496,31 @@ func TestContract_HTTPLoadBalancerCRDLifecycle(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Helper
+// Helpers
 // ---------------------------------------------------------------------------
+
+// contractEnsureOriginPool creates a minimal origin pool in the XC API that
+// load-balancer contract tests can reference. It registers a cleanup function
+// that deletes the pool when the test finishes.
+func contractEnsureOriginPool(t *testing.T, xcClient *xcclient.Client, xcNS, name string) {
+	t.Helper()
+	_ = xcClient.DeleteOriginPool(context.Background(), xcNS, name)
+	time.Sleep(time.Second)
+	_, err := xcClient.CreateOriginPool(context.Background(), xcNS, &xcclient.OriginPoolCreate{
+		Metadata: xcclient.ObjectMeta{Name: name, Namespace: xcNS},
+		Spec: xcclient.OriginPoolSpec{
+			OriginServers: []xcclient.OriginServer{
+				{PublicIP: &xcclient.PublicIP{IP: "198.51.100.1"}},
+			},
+			Port:  80,
+			NoTLS: emptyObjectJSON,
+		},
+	})
+	require.NoError(t, err, "creating dependency origin pool %s", name)
+	t.Cleanup(func() {
+		_ = xcClient.DeleteOriginPool(context.Background(), xcNS, name)
+	})
+}
 
 func contractGenerateTestCert(t *testing.T) (certPEM, keyPEM []byte) {
 	t.Helper()
@@ -779,8 +807,8 @@ func TestContract_HealthCheckCRDLifecycle_TCP(t *testing.T) {
 		Spec: v1alpha1.HealthCheckSpec{
 			XCNamespace: xcNS,
 			TCPHealthCheck: &v1alpha1.TCPHealthCheckSpec{
-				Send:    "PING",
-				Receive: "PONG",
+				Send:    "50494e47",
+				Receive: "504f4e47",
 			},
 		},
 	}
@@ -795,8 +823,8 @@ func TestContract_HealthCheckCRDLifecycle_TCP(t *testing.T) {
 	spec, err := hc.ParseSpec()
 	require.NoError(t, err)
 	require.NotNil(t, spec.TCPHealthCheck)
-	assert.Equal(t, "PING", spec.TCPHealthCheck.SendPayload)
-	assert.Equal(t, "PONG", spec.TCPHealthCheck.ExpectedResponse)
+	assert.Equal(t, "50494e47", spec.TCPHealthCheck.SendPayload)
+	assert.Equal(t, "504f4e47", spec.TCPHealthCheck.ExpectedResponse)
 
 	require.NoError(t, testClient.Delete(testCtx, cr))
 	deadline := time.Now().Add(30 * time.Second)
@@ -1075,6 +1103,9 @@ func TestContract_HTTPLoadBalancerCRDLifecycle_HTTPSAutoCert(t *testing.T) {
 
 	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-hlb-ac"}}
 	require.NoError(t, testClient.Create(testCtx, ns))
+
+	contractEnsureOriginPool(t, xcClient, xcNS, "contract-pool-hlb-ac")
+
 	_ = xcClient.DeleteHTTPLoadBalancer(context.Background(), xcNS, "contract-hlb-autocert")
 	time.Sleep(2 * time.Second)
 
@@ -1085,12 +1116,12 @@ func TestContract_HTTPLoadBalancerCRDLifecycle_HTTPSAutoCert(t *testing.T) {
 		},
 		Spec: v1alpha1.HTTPLoadBalancerSpec{
 			XCNamespace: xcNS,
-			Domains:     []string{"autocert.contract.test"},
+			Domains:     []string{"autocert.contract.example.com"},
 			HTTPSAutoCert: &v1alpha1.HTTPSAutoCertConfig{AddHSTS: true, HTTPRedirect: true, NoMTLS: &v1alpha1.EmptyObject{}},
 			DefaultRoutePools: []v1alpha1.RoutePool{
-				{Pool: v1alpha1.ObjectRef{Name: "contract-pool"}, Weight: uint32Ptr(1)},
+				{Pool: v1alpha1.ObjectRef{Name: "contract-pool-hlb-ac"}, Weight: uint32Ptr(1)},
 			},
-			AdvertiseOnPublicDefaultVIP: &v1alpha1.EmptyObject{},
+			DoNotAdvertise: &v1alpha1.EmptyObject{},
 		},
 	}
 	require.NoError(t, testClient.Create(testCtx, cr))
@@ -1137,6 +1168,9 @@ func TestContract_TCPLoadBalancerCRDLifecycle_DoNotAdvertise(t *testing.T) {
 
 	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "contract-tlb-noadv"}}
 	require.NoError(t, testClient.Create(testCtx, ns))
+
+	contractEnsureOriginPool(t, xcClient, xcNS, "contract-pool-tlb-noadv")
+
 	_ = xcClient.DeleteTCPLoadBalancer(context.Background(), xcNS, "contract-tlb-noadv")
 	time.Sleep(2 * time.Second)
 
@@ -1147,10 +1181,10 @@ func TestContract_TCPLoadBalancerCRDLifecycle_DoNotAdvertise(t *testing.T) {
 		},
 		Spec: v1alpha1.TCPLoadBalancerSpec{
 			XCNamespace: xcNS,
-			Domains:     []string{"internal.contract.test"},
+			Domains:     []string{"contract-tlb-noadv.k8s-op-test.example.com"},
 			ListenPort:  8080,
 			OriginPools: []v1alpha1.RoutePool{
-				{Pool: v1alpha1.ObjectRef{Name: "contract-pool"}, Weight: uint32Ptr(1)},
+				{Pool: v1alpha1.ObjectRef{Name: "contract-pool-tlb-noadv"}, Weight: uint32Ptr(1)},
 			},
 			DoNotAdvertise: &v1alpha1.EmptyObject{},
 		},

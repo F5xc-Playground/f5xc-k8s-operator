@@ -238,7 +238,11 @@ func mapHTTPLoadBalancerSpec(spec *v1alpha1.HTTPLoadBalancerSpec) xcclient.HTTPL
 
 	// TLS OneOf
 	if spec.HTTP != nil {
-		out.HTTP = marshalJSON(xcHTTPConfig{DNSVolterraManaged: spec.HTTP.DNSVolterraManaged, Port: spec.HTTP.Port})
+		port := spec.HTTP.Port
+		if port == 0 {
+			port = 80
+		}
+		out.HTTP = marshalJSON(xcHTTPConfig{DNSVolterraManaged: spec.HTTP.DNSVolterraManaged, Port: port})
 	}
 	if spec.HTTPS != nil {
 		out.HTTPS = mapHTTPSConfig(spec.HTTPS)

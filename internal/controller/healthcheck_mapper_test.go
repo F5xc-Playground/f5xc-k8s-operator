@@ -68,10 +68,10 @@ func TestBuildHealthCheckCreate_OptionalFieldsOmitted(t *testing.T) {
 	}
 
 	result := buildHealthCheckCreate(cr, "ns")
-	assert.Equal(t, uint32(0), result.Spec.Interval)
-	assert.Equal(t, uint32(0), result.Spec.Timeout)
-	assert.Equal(t, uint32(0), result.Spec.HealthyThreshold)
-	assert.Equal(t, uint32(0), result.Spec.UnhealthyThreshold)
+	assert.Equal(t, uint32(15), result.Spec.Interval)
+	assert.Equal(t, uint32(3), result.Spec.Timeout)
+	assert.Equal(t, uint32(3), result.Spec.HealthyThreshold)
+	assert.Equal(t, uint32(1), result.Spec.UnhealthyThreshold)
 }
 
 func TestBuildHealthCheckReplace_IncludesResourceVersion(t *testing.T) {

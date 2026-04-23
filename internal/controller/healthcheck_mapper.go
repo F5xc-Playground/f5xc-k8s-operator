@@ -34,7 +34,12 @@ func buildHealthCheckDesiredSpecJSON(cr *v1alpha1.HealthCheck, xcNamespace strin
 }
 
 func mapHealthCheckSpec(spec *v1alpha1.HealthCheckSpec) xcclient.HealthCheckSpec {
-	var out xcclient.HealthCheckSpec
+	out := xcclient.HealthCheckSpec{
+		HealthyThreshold:   3,
+		UnhealthyThreshold: 1,
+		Interval:           15,
+		Timeout:            3,
+	}
 
 	if spec.HTTPHealthCheck != nil {
 		out.HTTPHealthCheck = &xcclient.HTTPHealthCheck{
