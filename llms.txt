@@ -1,0 +1,32 @@
+# F5 XC Kubernetes Operator
+
+> Kubernetes operator that manages F5 Distributed Cloud (XC) resources as native Custom Resources.
+
+The f5xc-k8s-operator lets you declare F5 XC load balancers, origin pools, WAF policies, health checks, rate limiters, certificates, service policies, API definitions, user identification, and malicious user mitigation as Kubernetes CRDs. The operator reconciles these CRs against the F5 XC API.
+
+## Links
+
+- Source: https://github.com/kreynolds/f5xc-k8s-operator
+- F5 XC API: https://docs.cloud.f5.com/docs-v2/api
+
+## Supported Resources
+
+| Kind | Short | API Group | Description |
+|------|-------|-----------|-------------|
+| HTTPLoadBalancer | hlb | xc.f5.com/v1alpha1 | HTTP/HTTPS load balancer with WAF, rate limiting, bot defense |
+| TCPLoadBalancer | tlb | xc.f5.com/v1alpha1 | TCP load balancer with TLS termination/passthrough |
+| OriginPool | op | xc.f5.com/v1alpha1 | Backend server pool (static IP, DNS, K8s Service, auto-discover) |
+| AppFirewall | afw | xc.f5.com/v1alpha1 | Web Application Firewall policy (blocking/monitoring) |
+| ServicePolicy | sp | xc.f5.com/v1alpha1 | L7 request-level access control (allow/deny lists) |
+| HealthCheck | hc | xc.f5.com/v1alpha1 | Origin server health monitoring (HTTP/TCP) |
+| RateLimiter | rl | xc.f5.com/v1alpha1 | Request rate limiting threshold |
+| Certificate | cert | xc.f5.com/v1alpha1 | TLS certificate synced from K8s Secret to XC |
+| APIDefinition | apidef | xc.f5.com/v1alpha1 | API endpoint definition with swagger specs |
+| UserIdentification | uid | xc.f5.com/v1alpha1 | User identification rules for security features |
+| MaliciousUserMitigation | mum | xc.f5.com/v1alpha1 | Threat-level response actions for malicious users |
+
+## Full Documentation
+
+For complete usage instructions, all CRD specs, examples, dependency ordering, and operational guidance:
+
+- docs/llms-full.txt — Complete LLM-optimized operating guide

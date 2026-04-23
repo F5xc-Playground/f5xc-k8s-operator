@@ -1,0 +1,961 @@
+# F5 XC Kubernetes Operator — Complete Operating Guide
+
+This document contains everything needed to install, configure, and use the f5xc-k8s-operator to manage F5 Distributed Cloud resources from Kubernetes.
+
+---
+
+## 1. Installation
+
+### Prerequisites
+
+- Kubernetes cluster (1.26+)
+- Helm 3
+- F5 XC tenant URL and API token (generated at https://docs.cloud.f5.com/docs/how-to/user-mgmt/credentials)
+
+### Install via Helm
+
+```bash
+helm install f5xc-operator ./charts/f5xc-k8s-operator \
+  --set tenantURL=https://YOUR-TENANT.console.ves.volterra.io \
+  --set credentials.apiToken=YOUR_API_TOKEN
+```
+
+### Helm Values
+
+| Value | Default | Description |
+|-------|---------|-------------|
+| tenantURL | "" | F5 XC tenant URL (required) |
+| credentials.secretName | xc-credentials | K8s Secret name for credentials |
+| credentials.apiToken | "" | API token (stored in Secret at install) |
+| image.repository | f5xc-k8s-operator | Container image |
+| image.tag | latest | Image tag |
+| replicaCount | 1 | Operator replicas |
+| leaderElection | false | Enable leader election for HA |
+| resources.requests.cpu | 100m | CPU request |
+| resources.requests.memory | 128Mi | Memory request |
+| resources.limits.cpu | 500m | CPU limit |
+| resources.limits.memory | 256Mi | Memory limit |
+
+---
+
+## 2. Core Concepts
+
+### API Group and Version
+
+All resources use `apiVersion: xc.f5.com/v1alpha1`.
+
+### XC Namespace
+
+Every resource requires `spec.xcNamespace` — the F5 XC namespace to create the resource in. This is independent of the Kubernetes namespace.
+
+Resources that reference each other (e.g., HTTPLoadBalancer → OriginPool) must share the same xcNamespace.
+
+Some resource types (AppFirewall, HealthCheck, ServicePolicy, Certificate) can use the `shared` XC namespace and be referenced from any application namespace. OriginPools and LoadBalancers cannot use `shared`.
+
+### OneOf Fields
+
+Many XC resources use a "OneOf" pattern: set exactly one field from a group. For example, an HTTPLoadBalancer's TLS mode is one of `http`, `https`, or `httpsAutoCert`. Set the one you want; leave the rest unset. These fields accept JSON objects passed through to the XC API.
+
+### Status Conditions
+
+All resources report two conditions:
+- **Ready** — resource exists in F5 XC and is operational
+- **Synced** — resource spec matches what is in F5 XC
+
+Synced reasons: `CreateSucceeded`, `UpdateSucceeded`, `UpToDate`, `CreateFailed`, `UpdateFailed`, `AuthFailure`, `RateLimited`.
+
+Check status:
+```bash
+kubectl get hlb my-lb -o jsonpath='{.status.conditions}'
+```
+
+### Deletion Policy
+
+Deleting a CR deletes the F5 XC resource. To orphan the XC resource:
+```yaml
+metadata:
+  annotations:
+    f5xc.io/deletion-policy: orphan
+```
+
+### ObjectRef
+
+Resources reference each other via ObjectRef:
+```yaml
+appFirewall:
+  name: my-waf           # CR name in same K8s namespace
+  namespace: shared-ns    # optional: different K8s namespace
+  tenant: my-tenant       # optional: XC tenant
+```
+
+---
+
+## 3. Dependency Order
+
+Create resources bottom-up. Delete top-down.
+
+```
+Layer 1 (no dependencies):  Certificate, HealthCheck, RateLimiter, AppFirewall,
+                             ServicePolicy, APIDefinition, UserIdentification,
+                             MaliciousUserMitigation
+
+Layer 2 (references Layer 1): OriginPool (references HealthCheck)
+
+Layer 3 (references Layer 1+2): HTTPLoadBalancer, TCPLoadBalancer
+                                  (references OriginPool, AppFirewall,
+                                   ServicePolicy, APIDefinition,
+                                   UserIdentification, MaliciousUserMitigation)
+```
+
+The operator handles ordering automatically during reconciliation, but when applying manifests manually, create dependencies first.
+
+---
+
+## 4. Resource Reference
+
+### 4.1 Certificate
+
+Syncs a TLS certificate from a K8s `kubernetes.io/tls` Secret to F5 XC. Short name: `cert`.
+
+**Prerequisite:** Create the TLS Secret first:
+```bash
+kubectl create secret tls my-tls-secret --cert=tls.crt --key=tls.key
+```
+
+**Example:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: Certificate
+metadata:
+  name: my-cert
+spec:
+  xcNamespace: my-namespace
+  secretRef:
+    name: my-tls-secret
+```
+
+**Spec:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| xcNamespace | string | Yes | F5 XC namespace |
+| secretRef.name | string | Yes | Name of kubernetes.io/tls Secret |
+| secretRef.namespace | string | No | Secret namespace (defaults to CR namespace) |
+
+OCSP Stapling (choose one, optional):
+- `disableOcspStapling: {}` — disable OCSP stapling
+- `useSystemDefaults: {}` — use system defaults
+- `customHashAlgorithms` — custom config
+
+---
+
+### 4.2 HealthCheck
+
+Monitors origin server health. Referenced by OriginPool. Short name: `hc`.
+
+**HTTP health check:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: HealthCheck
+metadata:
+  name: http-check
+spec:
+  xcNamespace: my-namespace
+  httpHealthCheck:
+    path: "/healthz"
+```
+
+**TCP health check:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: HealthCheck
+metadata:
+  name: tcp-check
+spec:
+  xcNamespace: my-namespace
+  tcpHealthCheck:
+    send: "50494e47"
+    receive: "504f4e47"
+```
+
+**Spec:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| xcNamespace | string | Yes | F5 XC namespace |
+| httpHealthCheck.path | string | No | HTTP path to check |
+| httpHealthCheck.useHTTP2 | bool | No | Use HTTP/2 |
+| httpHealthCheck.expectedStatusCodes | []string | No | Healthy status codes |
+| tcpHealthCheck.send | string | No | Hex-encoded payload to send |
+| tcpHealthCheck.receive | string | No | Hex-encoded expected response |
+| healthyThreshold | int | No | Successes before healthy (default: 3) |
+| unhealthyThreshold | int | No | Failures before unhealthy (default: 1) |
+| interval | int | No | Check interval seconds (default: 15) |
+| timeout | int | No | Timeout seconds (default: 3) |
+| jitterPercent | int | No | Random jitter 0-100 |
+
+IMPORTANT: TCP send/receive values must be hex-encoded. "PING" = "50494e47", "PONG" = "504f4e47".
+
+---
+
+### 4.3 RateLimiter
+
+Request rate limiting threshold. Short name: `rl`.
+
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: RateLimiter
+metadata:
+  name: standard-limit
+spec:
+  xcNamespace: my-namespace
+  threshold: 100
+  unit: "MINUTE"
+  burstMultiplier: 3
+```
+
+**Spec:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| xcNamespace | string | Yes | F5 XC namespace |
+| threshold | int | Yes | Max requests per time unit |
+| unit | string | Yes | SECOND, MINUTE, or HOUR |
+| burstMultiplier | int | No | Burst allowance multiplier (default: 1) |
+
+---
+
+### 4.4 AppFirewall
+
+Web Application Firewall policy. Short name: `afw`.
+
+**Blocking mode:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: AppFirewall
+metadata:
+  name: my-waf
+spec:
+  xcNamespace: my-namespace
+  blocking: {}
+```
+
+**Monitoring mode:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: AppFirewall
+metadata:
+  name: monitor-waf
+spec:
+  xcNamespace: my-namespace
+  monitoring: {}
+```
+
+**With custom detection:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: AppFirewall
+metadata:
+  name: custom-waf
+spec:
+  xcNamespace: my-namespace
+  blocking: {}
+  detectionSettings:
+    signatureSelectionSetting:
+      highMediumLowAccuracySignatures: {}
+    enableThreatCampaigns: {}
+    enableSuppression: {}
+```
+
+**Spec:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| xcNamespace | string | Yes | F5 XC namespace |
+
+Enforcement Mode (choose one): `monitoring: {}` or `blocking: {}`
+Detection (choose one): `defaultDetectionSettings: {}` or `detectionSettings` (object)
+Blocking page: `useDefaultBlockingPage` or `blockingPage`
+Response codes: `allowAllResponseCodes` or `allowedResponseCodes`
+Bot protection: `defaultBotSetting` or `botProtectionSetting`
+Anonymization: `defaultAnonymization`, `disableAnonymization`, or `customAnonymization`
+
+---
+
+### 4.5 ServicePolicy
+
+L7 request-level access control. Short name: `sp`.
+
+**Allow all:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: ServicePolicy
+metadata:
+  name: allow-all
+spec:
+  xcNamespace: my-namespace
+  allowAllRequests: {}
+  anyServer: {}
+```
+
+**Allow list with IP prefixes:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: ServicePolicy
+metadata:
+  name: internal-only
+spec:
+  xcNamespace: my-namespace
+  allowList:
+    prefixes:
+      - "10.0.0.0/8"
+      - "192.168.0.0/16"
+    defaultActionDeny: {}
+  anyServer: {}
+```
+
+**Deny list:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: ServicePolicy
+metadata:
+  name: block-bad-actors
+spec:
+  xcNamespace: my-namespace
+  denyList:
+    prefixes:
+      - "198.51.100.0/24"
+    defaultActionAllow: {}
+  anyServer: {}
+```
+
+**Spec:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| xcNamespace | string | Yes | F5 XC namespace |
+
+Rule Choice (choose one): `allowAllRequests: {}`, `denyAllRequests: {}`, `allowList`, `denyList`, `ruleList`
+Server Choice (choose one): `anyServer: {}`, `serverName` (string), `serverNameMatcher`, `serverSelector`
+
+---
+
+### 4.6 APIDefinition
+
+API endpoint definition with swagger specs. Short name: `apidef`.
+
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: APIDefinition
+metadata:
+  name: petstore-api
+spec:
+  xcNamespace: my-namespace
+  swaggerSpecs:
+    - /api/object_store/namespaces/my-namespace/stored_objects/swagger/petstore/v1
+  mixedSchemaOrigin: {}
+```
+
+**With inventory lists:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: APIDefinition
+metadata:
+  name: custom-api
+spec:
+  xcNamespace: my-namespace
+  apiInventoryInclusionList:
+    - method: GET
+      path: /api/users
+    - method: POST
+      path: /api/users
+  apiInventoryExclusionList:
+    - method: DELETE
+      path: /api/admin
+  nonAPIEndpoints:
+    - method: GET
+      path: /health
+  strictSchemaOrigin: {}
+```
+
+**Spec:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| xcNamespace | string | Yes | F5 XC namespace |
+| swaggerSpecs | []string | No | Swagger spec URLs from XC object store |
+| apiInventoryInclusionList | []APIOperation | No | Endpoints to include |
+| apiInventoryExclusionList | []APIOperation | No | Endpoints to exclude |
+| nonAPIEndpoints | []APIOperation | No | Non-API endpoints |
+
+APIOperation: `method` (string) + `path` (string)
+Schema Origin (choose one): `mixedSchemaOrigin: {}` or `strictSchemaOrigin: {}`
+
+---
+
+### 4.7 UserIdentification
+
+Identifies unique users for security features. Short name: `uid`. Max 4 rules evaluated sequentially.
+
+**Client IP:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: UserIdentification
+metadata:
+  name: by-ip
+spec:
+  xcNamespace: my-namespace
+  rules:
+    - clientIP: {}
+```
+
+**Multiple rules (fallback chain):**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: UserIdentification
+metadata:
+  name: multi-rule
+spec:
+  xcNamespace: my-namespace
+  rules:
+    - jwtClaimName: sub
+    - httpHeaderName: X-User-ID
+    - clientIP: {}
+```
+
+**Spec:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| xcNamespace | string | Yes | F5 XC namespace |
+| rules | []Rule | Yes | 1-4 identification rules |
+
+Rule types (choose one per rule): `none: {}`, `clientIP: {}`, `clientASN: {}`, `clientCity: {}`, `clientCountry: {}`, `clientRegion: {}`, `cookieName` (string), `httpHeaderName` (string), `ipAndHTTPHeaderName` (string), `ipAndTLSFingerprint: {}`, `ipAndJA4TLSFingerprint: {}`, `tlsFingerprint: {}`, `ja4TLSFingerprint: {}`, `jwtClaimName` (string), `queryParamKey` (string)
+
+---
+
+### 4.8 MaliciousUserMitigation
+
+Threat-level response actions. Short name: `mum`. Referenced from HTTPLoadBalancer's `policyBasedChallenge`.
+
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: MaliciousUserMitigation
+metadata:
+  name: standard-mitigation
+spec:
+  xcNamespace: my-namespace
+  mitigationType:
+    rules:
+      - threatLevel:
+          low: {}
+        mitigationAction:
+          javascriptChallenge: {}
+      - threatLevel:
+          medium: {}
+        mitigationAction:
+          captchaChallenge: {}
+      - threatLevel:
+          high: {}
+        mitigationAction:
+          blockTemporarily: {}
+```
+
+**Spec:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| xcNamespace | string | Yes | F5 XC namespace |
+| mitigationType.rules | []Rule | No | Max 3 rules, one per threat level |
+
+Threat levels: `low: {}`, `medium: {}`, `high: {}`
+Actions: `blockTemporarily: {}`, `captchaChallenge: {}`, `javascriptChallenge: {}`
+
+---
+
+### 4.9 OriginPool
+
+Backend server pool. Short name: `op`.
+
+**Static IP:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: OriginPool
+metadata:
+  name: static-pool
+spec:
+  xcNamespace: my-namespace
+  port: 443
+  originServers:
+    - publicIP:
+        ip: "203.0.113.10"
+  loadBalancerAlgorithm: "ROUND_ROBIN"
+```
+
+**DNS name:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: OriginPool
+metadata:
+  name: dns-pool
+spec:
+  xcNamespace: my-namespace
+  port: 443
+  originServers:
+    - publicName:
+        dnsName: "backend.example.com"
+```
+
+**K8s Service via site:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: OriginPool
+metadata:
+  name: k8s-pool
+spec:
+  xcNamespace: my-namespace
+  port: 8080
+  originServers:
+    - k8sService:
+        serviceName: my-service
+        serviceNamespace: default
+        site:
+          name: my-xc-site
+```
+
+**With health check and TLS:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: OriginPool
+metadata:
+  name: tls-pool
+spec:
+  xcNamespace: my-namespace
+  port: 443
+  originServers:
+    - publicIP:
+        ip: "203.0.113.10"
+  healthChecks:
+    - name: my-healthcheck
+  useTLS:
+    skipServerVerification: {}
+```
+
+**Spec:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| xcNamespace | string | Yes | F5 XC namespace |
+| port | int | Yes | Port for all origin servers |
+| originServers | list | Yes | Origin server definitions |
+| loadBalancerAlgorithm | string | No | ROUND_ROBIN, LEAST_REQUEST, RANDOM, RING_HASH |
+| healthChecks | []ObjectRef | No | References to HealthCheck CRs |
+| useTLS | object | No | TLS config |
+| noTLS | object | No | Explicit no-TLS |
+
+Origin server types (choose one per entry):
+- `publicIP.ip` — public IP
+- `publicName.dnsName` — public DNS
+- `privateIP.ip` — private IP (requires site/virtualSite + network choice)
+- `privateName.dnsName` — private DNS (requires site/virtualSite + network choice)
+- `k8sService.serviceName` — K8s Service (with serviceNamespace, site/virtualSite)
+- `consulService.serviceName` — Consul service
+
+Network choice for private/K8s/Consul: `insideNetwork: {}` or `outsideNetwork: {}`
+
+---
+
+### 4.10 HTTPLoadBalancer
+
+HTTP/HTTPS load balancer. Short name: `hlb`.
+
+**Basic HTTP:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: HTTPLoadBalancer
+metadata:
+  name: my-lb
+spec:
+  xcNamespace: my-namespace
+  domains:
+    - "app.example.com"
+  http:
+    port: 80
+  defaultRoutePools:
+    - pool:
+        name: my-origin-pool
+      weight: 1
+  advertiseOnPublicDefaultVIP: {}
+```
+
+**HTTPS with auto certificate:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: HTTPLoadBalancer
+metadata:
+  name: https-lb
+spec:
+  xcNamespace: my-namespace
+  domains:
+    - "secure.example.com"
+  httpsAutoCert:
+    addHSTS: true
+    httpRedirect: true
+  defaultRoutePools:
+    - pool:
+        name: my-origin-pool
+      weight: 1
+  advertiseOnPublicDefaultVIP: {}
+```
+
+**Full-featured with WAF, service policies, user identification, and malicious user mitigation:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: HTTPLoadBalancer
+metadata:
+  name: protected-lb
+spec:
+  xcNamespace: my-namespace
+  domains:
+    - "app.example.com"
+  httpsAutoCert:
+    addHSTS: true
+    httpRedirect: true
+  defaultRoutePools:
+    - pool:
+        name: my-origin-pool
+      weight: 1
+  appFirewall:
+    name: my-waf
+  servicePoliciesFromNamespace: {}
+  userIdentification:
+    name: by-ip
+  enableMaliciousUserDetection: {}
+  policyBasedChallenge:
+    maliciousUserMitigation:
+      name: standard-mitigation
+  apiSpecification:
+    apiDefinition:
+      name: petstore-api
+    validationDisabled: {}
+  advertiseOnPublicDefaultVIP: {}
+```
+
+**Spec:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| xcNamespace | string | Yes | F5 XC namespace |
+| domains | []string | Yes | Domain names to serve |
+| defaultRoutePools | []RoutePool | Yes | Default backend pools |
+| routes | []object | No | Advanced routing rules |
+
+RoutePool:
+```yaml
+defaultRoutePools:
+  - pool:
+      name: my-pool        # OriginPool CR name
+      namespace: other-ns   # optional
+    weight: 1               # optional
+    priority: 1             # optional
+```
+
+TLS Mode (choose one):
+- `http` — plain HTTP. `port` defaults to 80. Optional `dnsVolterraManaged`.
+- `https` — HTTPS with explicit TLS certificate
+- `httpsAutoCert` — HTTPS with auto certificate from F5 XC
+
+Advertisement (choose one):
+- `advertiseOnPublicDefaultVIP: {}` — default public VIP
+- `advertiseOnPublic` — custom public config
+- `advertiseCustom` — custom config
+- `doNotAdvertise: {}` — do not advertise
+
+IMPORTANT: `dnsVolterraManaged: true` is incompatible with `doNotAdvertise`. Managed DNS requires a public VIP.
+
+WAF (choose one): `appFirewall` (ObjectRef) or `disableWAF: {}`
+Bot defense: `disableBotDefense` or `botDefense`
+API discovery: `disableAPIDiscovery` or `enableAPIDiscovery`
+IP reputation: `disableIPReputation` or `enableIPReputation`
+Rate limiting: `disableRateLimit` or `rateLimit`
+Challenge: `noChallenge`, `jsChallenge`, `captchaChallenge`, `policyBasedChallenge`
+LB algorithm: `roundRobin`, `leastActive`, `random`, `sourceIPStickiness`, `cookieStickiness`, `ringHash`
+Service policies: `servicePoliciesFromNamespace: {}`, `activeServicePolicies`, `noServicePolicies`
+User ID: `userIDClientIP` or `userIdentification` (ObjectRef to UserIdentification)
+API definition: `disableAPIDefinition` or `apiSpecification` (with `apiDefinition` ObjectRef + validation)
+Malicious user detection: `disableMaliciousUserDetection` or `enableMaliciousUserDetection: {}`
+
+---
+
+### 4.11 TCPLoadBalancer
+
+TCP load balancer. Short name: `tlb`.
+
+**Basic:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: TCPLoadBalancer
+metadata:
+  name: my-tcp-lb
+spec:
+  xcNamespace: my-namespace
+  domains:
+    - "tcp.example.com"
+  listenPort: 443
+  originPools:
+    - pool:
+        name: my-origin-pool
+      weight: 1
+```
+
+**With auto-cert TLS:**
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: TCPLoadBalancer
+metadata:
+  name: tls-tcp-lb
+spec:
+  xcNamespace: my-namespace
+  domains:
+    - "tcp.example.com"
+  listenPort: 443
+  originPools:
+    - pool:
+        name: my-origin-pool
+      weight: 1
+  tlsTCPAutoCert:
+    noMTLS: {}
+  advertiseOnPublicDefaultVIP: {}
+```
+
+**Spec:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| xcNamespace | string | Yes | F5 XC namespace |
+| domains | []string | Yes | Domain names |
+| listenPort | int | Yes | TCP listening port |
+| originPools | []RoutePool | Yes | Backend pools |
+
+TLS Mode (choose one): `noTLS: {}`, `tlsParameters`, `tlsTCPAutoCert`
+Advertisement (choose one): `advertiseOnPublicDefaultVIP: {}`, `advertiseOnPublic`, `advertiseCustom`, `doNotAdvertise: {}`
+
+---
+
+## 5. Common Patterns
+
+### Deploy an HTTPS application with WAF
+
+```yaml
+# 1. Origin pool
+apiVersion: xc.f5.com/v1alpha1
+kind: OriginPool
+metadata:
+  name: app-pool
+spec:
+  xcNamespace: my-namespace
+  port: 8080
+  originServers:
+    - publicName:
+        dnsName: "backend.internal.example.com"
+---
+# 2. WAF policy
+apiVersion: xc.f5.com/v1alpha1
+kind: AppFirewall
+metadata:
+  name: app-waf
+spec:
+  xcNamespace: my-namespace
+  blocking: {}
+---
+# 3. Load balancer
+apiVersion: xc.f5.com/v1alpha1
+kind: HTTPLoadBalancer
+metadata:
+  name: app-lb
+spec:
+  xcNamespace: my-namespace
+  domains:
+    - "app.example.com"
+  httpsAutoCert:
+    addHSTS: true
+    httpRedirect: true
+  defaultRoutePools:
+    - pool:
+        name: app-pool
+      weight: 1
+  appFirewall:
+    name: app-waf
+  advertiseOnPublicDefaultVIP: {}
+```
+
+### Deploy with health checks
+
+```yaml
+# 1. Health check
+apiVersion: xc.f5.com/v1alpha1
+kind: HealthCheck
+metadata:
+  name: app-hc
+spec:
+  xcNamespace: my-namespace
+  httpHealthCheck:
+    path: "/healthz"
+---
+# 2. Origin pool with health check
+apiVersion: xc.f5.com/v1alpha1
+kind: OriginPool
+metadata:
+  name: monitored-pool
+spec:
+  xcNamespace: my-namespace
+  port: 443
+  originServers:
+    - publicIP:
+        ip: "203.0.113.10"
+  healthChecks:
+    - name: app-hc
+  useTLS:
+    skipServerVerification: {}
+```
+
+### Rate-limited application with user identification
+
+```yaml
+# 1. User identification
+apiVersion: xc.f5.com/v1alpha1
+kind: UserIdentification
+metadata:
+  name: user-id
+spec:
+  xcNamespace: my-namespace
+  rules:
+    - httpHeaderName: Authorization
+    - clientIP: {}
+---
+# 2. Rate limiter
+apiVersion: xc.f5.com/v1alpha1
+kind: RateLimiter
+metadata:
+  name: api-limit
+spec:
+  xcNamespace: my-namespace
+  threshold: 100
+  unit: "MINUTE"
+---
+# 3. HTTP LB references both
+apiVersion: xc.f5.com/v1alpha1
+kind: HTTPLoadBalancer
+metadata:
+  name: rate-limited-app
+spec:
+  xcNamespace: my-namespace
+  domains:
+    - "api.example.com"
+  httpsAutoCert:
+    addHSTS: true
+    httpRedirect: true
+  defaultRoutePools:
+    - pool:
+        name: app-pool
+      weight: 1
+  userIdentification:
+    name: user-id
+  advertiseOnPublicDefaultVIP: {}
+```
+
+### IP allow-list with service policy
+
+```yaml
+# 1. Service policy
+apiVersion: xc.f5.com/v1alpha1
+kind: ServicePolicy
+metadata:
+  name: internal-only
+spec:
+  xcNamespace: my-namespace
+  allowList:
+    prefixes:
+      - "10.0.0.0/8"
+      - "172.16.0.0/12"
+      - "192.168.0.0/16"
+    defaultActionDeny: {}
+  anyServer: {}
+---
+# 2. HTTP LB with policy
+apiVersion: xc.f5.com/v1alpha1
+kind: HTTPLoadBalancer
+metadata:
+  name: internal-app
+spec:
+  xcNamespace: my-namespace
+  domains:
+    - "internal.example.com"
+  http:
+    port: 80
+  defaultRoutePools:
+    - pool:
+        name: app-pool
+      weight: 1
+  servicePoliciesFromNamespace: {}
+  advertiseOnPublicDefaultVIP: {}
+```
+
+---
+
+## 6. Verification
+
+### Check resource status
+
+```bash
+# List all resources of a type
+kubectl get hlb,tlb,op,afw,sp,hc,rl,cert,apidef,uid,mum
+
+# Check specific resource status
+kubectl get hlb my-lb -o yaml
+
+# Watch for status changes
+kubectl get hlb -w
+```
+
+### Verify conditions
+
+A healthy resource has both Ready=True and Synced=True:
+
+```bash
+kubectl get hlb my-lb -o jsonpath='{range .status.conditions[*]}{.type}={.status} {.reason}{"\n"}{end}'
+```
+
+Expected output:
+```
+Ready=True CreateSucceeded
+Synced=True UpToDate
+```
+
+### Troubleshoot failures
+
+If Synced=False, check the reason and message:
+```bash
+kubectl describe hlb my-lb
+```
+
+Common issues:
+- `AuthFailure` — invalid or expired API token
+- `CreateFailed` — XC API rejected the spec (check message for details)
+- `RateLimited` — too many API calls, operator will retry
+
+---
+
+## 7. Important Constraints
+
+1. All YAML field names use camelCase (matching Go struct JSON tags), not snake_case.
+2. Resources referencing each other must share the same `xcNamespace`.
+3. `advertiseOnPublicDefaultVIP` on shared tenants can cause VIP port collisions. Use `doNotAdvertise: {}` for internal-only resources.
+4. `dnsVolterraManaged: true` requires a public VIP — incompatible with `doNotAdvertise`.
+5. TCP health check send/receive values must be hex-encoded strings.
+6. RateLimiter `burstMultiplier` must be > 0 (defaults to 1 if omitted).
+7. HealthCheck `healthyThreshold` must be >= 1 (defaults to 3 if omitted).
+8. HTTPLoadBalancer `http.port` defaults to 80 if omitted.
+9. MaliciousUserMitigation requires `enableMaliciousUserDetection: {}` on the HTTPLoadBalancer.
+10. UserIdentification rules are evaluated sequentially, max 4 rules.
+11. MaliciousUserMitigation supports max 3 rules (one per threat level).
