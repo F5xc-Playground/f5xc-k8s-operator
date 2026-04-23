@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump type"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        id: version
+        run: |
+          CURRENT=$(grep '^version:' charts/f5xc-k8s-operator/Chart.yaml | awk '{print $2}')
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+
+          case "${{ inputs.bump }}" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+
+          NEW="${MAJOR}.${MINOR}.${PATCH}"
+          sed -i "s/^version: .*/version: ${NEW}/" charts/f5xc-k8s-operator/Chart.yaml
+          sed -i "s/^appVersion: .*/appVersion: \"${NEW}\"/" charts/f5xc-k8s-operator/Chart.yaml
+
+          echo "version=${NEW}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${NEW}" >> "$GITHUB_OUTPUT"
+
+      - name: Commit version bump
+        run: |
+          git add charts/f5xc-k8s-operator/Chart.yaml
+          git commit -m "chore: bump chart version to ${{ steps.version.outputs.version }}"
+          git push
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Package Helm chart
+        run: helm package charts/f5xc-k8s-operator -d dist/
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            dist/f5xc-k8s-operator-${{ steps.version.outputs.version }}.tgz \
+            --title "${{ steps.version.outputs.tag }}" \
+            --generate-notes
