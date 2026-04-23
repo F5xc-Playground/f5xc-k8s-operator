@@ -1,2 +1,32 @@
-.worktrees/
+# OS
 .DS_Store
+
+# Worktrees
+.worktrees/
+
+# Planning / internal dev docs
+docs/superpowers/
+docs/oas-audit.md
+
+# Binaries
+bin/
+testbin/
+
+# Environment / secrets
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Test artifacts
+cover.out
+*.coverprofile
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
