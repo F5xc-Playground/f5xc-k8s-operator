@@ -506,7 +506,10 @@ spec:
         dnsName: "backend.example.com"
 ```
 
-**K8s Service via site:**
+**K8s Service via XC site (NOT local discovery):**
+
+`k8sService` is an F5 XC API concept — it references a Kubernetes Service on a cluster registered as an XC Customer Edge (CE) site. XC routes traffic to that service through the CE. To discover services in the same cluster as this operator, use `discover` instead.
+
 ```yaml
 apiVersion: xc.f5.com/v1alpha1
 kind: OriginPool
@@ -521,6 +524,26 @@ spec:
         serviceNamespace: default
         site:
           name: my-xc-site
+```
+
+**Local cluster auto-discovery:**
+
+The operator watches the referenced resource and resolves its address automatically. Discovered addresses appear in `.status.discoveredOrigins`. Supported kinds: Service, Ingress, Gateway, Route (OpenShift).
+
+```yaml
+apiVersion: xc.f5.com/v1alpha1
+kind: OriginPool
+metadata:
+  name: discovered-pool
+spec:
+  xcNamespace: my-namespace
+  port: 443
+  originServers:
+    - discover:
+        resource:
+          kind: Service
+          name: my-nginx
+          namespace: default
 ```
 
 **With health check and TLS:**
@@ -558,8 +581,9 @@ Origin server types (choose one per entry):
 - `publicName.dnsName` — public DNS
 - `privateIP.ip` — private IP (requires site/virtualSite + network choice)
 - `privateName.dnsName` — private DNS (requires site/virtualSite + network choice)
-- `k8sService.serviceName` — K8s Service (with serviceNamespace, site/virtualSite)
+- `k8sService.serviceName` — K8s Service on an XC-registered CE site (NOT local discovery)
 - `consulService.serviceName` — Consul service
+- `discover.resource` — auto-discover from a local K8s resource (Service, Ingress, Gateway, Route)
 
 Network choice for private/K8s/Consul: `insideNetwork: {}` or `outsideNetwork: {}`
 

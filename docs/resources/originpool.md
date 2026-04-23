@@ -44,7 +44,9 @@ spec:
         dnsName: "backend.example.com"
 ```
 
-### Kubernetes Service origin (via site)
+### Kubernetes Service origin (via XC site)
+
+> **This is not local cluster discovery.** `k8sService` is an F5 XC API concept — it references a Kubernetes Service on a cluster registered as an XC Customer Edge (CE) site. XC routes traffic to that service through the CE. To discover services running in the **same cluster as this operator**, use `discover` below instead.
 
 ```yaml
 apiVersion: xc.f5.com/v1alpha1
@@ -62,7 +64,7 @@ spec:
           name: my-xc-site
 ```
 
-### Auto-discovery from a Kubernetes Service
+### Auto-discovery from a local Kubernetes resource
 
 ```yaml
 apiVersion: xc.f5.com/v1alpha1
@@ -139,9 +141,9 @@ Each entry in `originServers` must specify exactly one of:
 | `publicName.dnsName` | Public DNS name |
 | `privateIP.ip` | Private IP (with `site` or `virtualSite` and network choice) |
 | `privateName.dnsName` | Private DNS name (with `site` or `virtualSite` and network choice) |
-| `k8sService.serviceName` | Kubernetes Service (with optional `serviceNamespace`, `site`/`virtualSite`, and network choice) |
+| `k8sService.serviceName` | K8s Service on an XC-registered CE site — not local cluster discovery (requires `site`/`virtualSite`) |
 | `consulService.serviceName` | Consul service (with `site` or `virtualSite` and network choice) |
-| `discover.resource` | Auto-discover from a K8s resource (`kind`, `name`, `namespace`) |
+| `discover.resource` | Auto-discover from a local K8s resource in this cluster (`kind`, `name`, `namespace`) |
 
 ### Site Location
 
