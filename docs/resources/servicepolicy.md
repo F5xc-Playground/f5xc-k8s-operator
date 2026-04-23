@@ -48,15 +48,10 @@ spec:
   xcNamespace: my-namespace
 
   allowList:
-    rules:
-      - metadata:
-          name: allow-internal
-        spec:
-          ip_prefix_list:
-            prefix:
-              - "10.0.0.0/8"
-              - "192.168.0.0/16"
-    default_action_deny: {}
+    prefixes:
+      - "10.0.0.0/8"
+      - "192.168.0.0/16"
+    defaultActionDeny: {}
   anyServer: {}
 ```
 
@@ -71,14 +66,9 @@ spec:
   xcNamespace: my-namespace
 
   denyList:
-    rules:
-      - metadata:
-          name: block-ips
-        spec:
-          ip_prefix_list:
-            prefix:
-              - "198.51.100.0/24"
-    default_action_allow: {}
+    prefixes:
+      - "198.51.100.0/24"
+    defaultActionAllow: {}
   anyServer: {}
 ```
 

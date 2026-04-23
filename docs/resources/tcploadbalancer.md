@@ -46,7 +46,7 @@ spec:
         name: my-origin-pool
       weight: 1
   tlsTCPAutoCert:
-    no_mtls: {}
+    noMTLS: {}
   advertiseOnPublicDefaultVIP: {}
 ```
 

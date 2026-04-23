@@ -53,7 +53,9 @@ metadata:
   name: tcp-check
 spec:
   xcNamespace: my-namespace
-  tcpHealthCheck: {}
+  tcpHealthCheck:
+    send: "50494e47"
+    receive: "504f4e47"
 ```
 
 ### Attach to an OriginPool
@@ -82,10 +84,10 @@ spec:
 | `xcNamespace` | string | Yes | F5 XC namespace |
 | `httpHealthCheck` | object | No | HTTP health check config (see below) |
 | `tcpHealthCheck` | object | No | TCP health check config (see below) |
-| `healthyThreshold` | int | No | Consecutive successes before marking healthy |
-| `unhealthyThreshold` | int | No | Consecutive failures before marking unhealthy |
-| `interval` | int | No | Check interval in seconds |
-| `timeout` | int | No | Check timeout in seconds |
+| `healthyThreshold` | int | No | Consecutive successes before marking healthy (defaults to 3) |
+| `unhealthyThreshold` | int | No | Consecutive failures before marking unhealthy (defaults to 1) |
+| `interval` | int | No | Check interval in seconds (defaults to 15) |
+| `timeout` | int | No | Check timeout in seconds (defaults to 3) |
 | `jitterPercent` | int | No | Random jitter as a percentage (0-100) |
 
 ### HTTP Health Check
@@ -100,5 +102,5 @@ spec:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `send` | string | Payload to send |
-| `receive` | string | Expected response |
+| `send` | string | Hex-encoded payload to send (e.g., `"50494e47"` for "PING") |
+| `receive` | string | Hex-encoded expected response (e.g., `"504f4e47"` for "PONG") |

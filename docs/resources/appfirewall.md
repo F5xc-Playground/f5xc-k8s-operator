@@ -46,10 +46,10 @@ spec:
   xcNamespace: my-namespace
   blocking: {}
   detectionSettings:
-    signature_selection_setting:
-      high_medium_low_accuracy_signatures: {}
-    enable_threat_campaigns: {}
-    enable_suppression: {}
+    signatureSelectionSetting:
+      highMediumLowAccuracySignatures: {}
+    enableThreatCampaigns: {}
+    enableSuppression: {}
 ```
 
 ### Attach to an HTTPLoadBalancer

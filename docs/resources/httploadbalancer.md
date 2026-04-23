@@ -43,8 +43,8 @@ spec:
   domains:
     - "secure.example.com"
   httpsAutoCert:
-    add_hsts: true
-    http_redirect: true
+    addHSTS: true
+    httpRedirect: true
   defaultRoutePools:
     - pool:
         name: my-origin-pool
@@ -103,7 +103,7 @@ defaultRoutePools:
 
 | Field | Description |
 |-------|-------------|
-| `http` | Plain HTTP. Requires `port` inside the object. |
+| `http` | Plain HTTP. Optional `port` (defaults to 80) and `dnsVolterraManaged` fields. |
 | `https` | HTTPS with explicit TLS certificate configuration. |
 | `httpsAutoCert` | HTTPS with automatic certificate from F5 XC. |
 
@@ -138,4 +138,34 @@ Each group is mutually exclusive. Set at most one field per group.
 | Challenge | `noChallenge`, `jsChallenge`, `captchaChallenge`, `policyBasedChallenge` |
 | LB algorithm | `roundRobin`, `leastActive`, `random`, `sourceIPStickiness`, `cookieStickiness`, `ringHash` |
 | Service policies | `servicePoliciesFromNamespace`, `activeServicePolicies`, `noServicePolicies` |
-| User ID | `userIDClientIP` |
+| User ID | `userIDClientIP`, `userIdentification` (ObjectRef to UserIdentification CR) |
+| API definition | `disableAPIDefinition`, `apiSpecification` (see below) |
+| Malicious user detection | `disableMaliciousUserDetection`, `enableMaliciousUserDetection` |
+
+### ObjectRef Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `userIdentification` | ObjectRef | Reference to a UserIdentification CR |
+| `apiSpecification` | APISpecificationConfig | API definition with validation settings (see below) |
+
+### APISpecificationConfig
+
+```yaml
+apiSpecification:
+  apiDefinition:
+    name: my-api-def       # APIDefinition CR name
+  validationDisabled: {}   # or validationAllMethods / validationCustomList
+```
+
+### PolicyBasedChallenge
+
+When using `policyBasedChallenge`, you can reference a MaliciousUserMitigation CR:
+
+```yaml
+policyBasedChallenge:
+  maliciousUserMitigation:
+    name: my-mitigation    # MaliciousUserMitigation CR name
+```
+
+Note: `enableMaliciousUserDetection` must also be set at the top level to activate detection.

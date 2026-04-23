@@ -110,7 +110,7 @@ spec:
   healthChecks:
     - name: my-healthcheck
   useTLS:
-    skip_server_verification: {}
+    skipServerVerification: {}
 ```
 
 ## Spec Reference

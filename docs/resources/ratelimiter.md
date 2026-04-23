@@ -51,4 +51,4 @@ Rate limiters are referenced from HTTPLoadBalancers using the `rateLimit` OneOf 
 | `xcNamespace` | string | Yes | F5 XC namespace |
 | `threshold` | int | Yes | Maximum number of requests per time unit |
 | `unit` | string | Yes | Time unit: `SECOND`, `MINUTE`, or `HOUR` |
-| `burstMultiplier` | int | No | Multiplier for burst allowance above the threshold |
+| `burstMultiplier` | int | No | Multiplier for burst allowance above the threshold (defaults to 1) |
