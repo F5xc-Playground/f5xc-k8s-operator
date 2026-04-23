@@ -27,6 +27,6 @@ The f5xc-k8s-operator lets you declare F5 XC load balancers, origin pools, WAF p
 
 ## Full Documentation
 
-For complete usage instructions, all CRD specs, examples, dependency ordering, and operational guidance:
-
-- docs/llms-full.txt — Complete LLM-optimized operating guide
+- docs/llms-full.txt — Complete LLM-optimized operating guide (installation, all CRDs, examples, ArgoCD, constraints)
+- docs/argocd.md — ArgoCD / GitOps integration guide
+- docs/argocd-health-checks.yaml — Ready-to-use ArgoCD health check config for all 11 CRDs

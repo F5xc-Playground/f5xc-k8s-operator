@@ -1,0 +1,264 @@
+# ArgoCD custom health checks for f5xc-k8s-operator CRDs.
+#
+# Merge these keys into your argocd-cm ConfigMap under the `data:` section.
+# All 11 resource types use the same health check logic:
+#   - Progressing: no status yet (waiting for reconciliation)
+#   - Degraded: Synced=False (create/update failed)
+#   - Healthy: Ready=True
+#
+# Usage:
+#   kubectl edit configmap argocd-cm -n argocd
+#   # paste the keys below into the data: section
+
+resource.customizations.health.xc.f5.com_HTTPLoadBalancer: |
+  hs = {}
+  if obj.status == nil or obj.status.conditions == nil then
+    hs.status = "Progressing"
+    hs.message = "Waiting for reconciliation"
+    return hs
+  end
+  for _, c in ipairs(obj.status.conditions) do
+    if c.type == "Ready" and c.status == "True" then
+      hs.status = "Healthy"
+      hs.message = c.reason or ""
+      return hs
+    end
+    if c.type == "Synced" and c.status == "False" then
+      hs.status = "Degraded"
+      hs.message = c.message or c.reason or "Sync failed"
+      return hs
+    end
+  end
+  hs.status = "Progressing"
+  hs.message = "Waiting for Ready condition"
+  return hs
+
+resource.customizations.health.xc.f5.com_TCPLoadBalancer: |
+  hs = {}
+  if obj.status == nil or obj.status.conditions == nil then
+    hs.status = "Progressing"
+    hs.message = "Waiting for reconciliation"
+    return hs
+  end
+  for _, c in ipairs(obj.status.conditions) do
+    if c.type == "Ready" and c.status == "True" then
+      hs.status = "Healthy"
+      hs.message = c.reason or ""
+      return hs
+    end
+    if c.type == "Synced" and c.status == "False" then
+      hs.status = "Degraded"
+      hs.message = c.message or c.reason or "Sync failed"
+      return hs
+    end
+  end
+  hs.status = "Progressing"
+  hs.message = "Waiting for Ready condition"
+  return hs
+
+resource.customizations.health.xc.f5.com_OriginPool: |
+  hs = {}
+  if obj.status == nil or obj.status.conditions == nil then
+    hs.status = "Progressing"
+    hs.message = "Waiting for reconciliation"
+    return hs
+  end
+  for _, c in ipairs(obj.status.conditions) do
+    if c.type == "Ready" and c.status == "True" then
+      hs.status = "Healthy"
+      hs.message = c.reason or ""
+      return hs
+    end
+    if c.type == "Synced" and c.status == "False" then
+      hs.status = "Degraded"
+      hs.message = c.message or c.reason or "Sync failed"
+      return hs
+    end
+  end
+  hs.status = "Progressing"
+  hs.message = "Waiting for Ready condition"
+  return hs
+
+resource.customizations.health.xc.f5.com_AppFirewall: |
+  hs = {}
+  if obj.status == nil or obj.status.conditions == nil then
+    hs.status = "Progressing"
+    hs.message = "Waiting for reconciliation"
+    return hs
+  end
+  for _, c in ipairs(obj.status.conditions) do
+    if c.type == "Ready" and c.status == "True" then
+      hs.status = "Healthy"
+      hs.message = c.reason or ""
+      return hs
+    end
+    if c.type == "Synced" and c.status == "False" then
+      hs.status = "Degraded"
+      hs.message = c.message or c.reason or "Sync failed"
+      return hs
+    end
+  end
+  hs.status = "Progressing"
+  hs.message = "Waiting for Ready condition"
+  return hs
+
+resource.customizations.health.xc.f5.com_ServicePolicy: |
+  hs = {}
+  if obj.status == nil or obj.status.conditions == nil then
+    hs.status = "Progressing"
+    hs.message = "Waiting for reconciliation"
+    return hs
+  end
+  for _, c in ipairs(obj.status.conditions) do
+    if c.type == "Ready" and c.status == "True" then
+      hs.status = "Healthy"
+      hs.message = c.reason or ""
+      return hs
+    end
+    if c.type == "Synced" and c.status == "False" then
+      hs.status = "Degraded"
+      hs.message = c.message or c.reason or "Sync failed"
+      return hs
+    end
+  end
+  hs.status = "Progressing"
+  hs.message = "Waiting for Ready condition"
+  return hs
+
+resource.customizations.health.xc.f5.com_HealthCheck: |
+  hs = {}
+  if obj.status == nil or obj.status.conditions == nil then
+    hs.status = "Progressing"
+    hs.message = "Waiting for reconciliation"
+    return hs
+  end
+  for _, c in ipairs(obj.status.conditions) do
+    if c.type == "Ready" and c.status == "True" then
+      hs.status = "Healthy"
+      hs.message = c.reason or ""
+      return hs
+    end
+    if c.type == "Synced" and c.status == "False" then
+      hs.status = "Degraded"
+      hs.message = c.message or c.reason or "Sync failed"
+      return hs
+    end
+  end
+  hs.status = "Progressing"
+  hs.message = "Waiting for Ready condition"
+  return hs
+
+resource.customizations.health.xc.f5.com_RateLimiter: |
+  hs = {}
+  if obj.status == nil or obj.status.conditions == nil then
+    hs.status = "Progressing"
+    hs.message = "Waiting for reconciliation"
+    return hs
+  end
+  for _, c in ipairs(obj.status.conditions) do
+    if c.type == "Ready" and c.status == "True" then
+      hs.status = "Healthy"
+      hs.message = c.reason or ""
+      return hs
+    end
+    if c.type == "Synced" and c.status == "False" then
+      hs.status = "Degraded"
+      hs.message = c.message or c.reason or "Sync failed"
+      return hs
+    end
+  end
+  hs.status = "Progressing"
+  hs.message = "Waiting for Ready condition"
+  return hs
+
+resource.customizations.health.xc.f5.com_Certificate: |
+  hs = {}
+  if obj.status == nil or obj.status.conditions == nil then
+    hs.status = "Progressing"
+    hs.message = "Waiting for reconciliation"
+    return hs
+  end
+  for _, c in ipairs(obj.status.conditions) do
+    if c.type == "Ready" and c.status == "True" then
+      hs.status = "Healthy"
+      hs.message = c.reason or ""
+      return hs
+    end
+    if c.type == "Synced" and c.status == "False" then
+      hs.status = "Degraded"
+      hs.message = c.message or c.reason or "Sync failed"
+      return hs
+    end
+  end
+  hs.status = "Progressing"
+  hs.message = "Waiting for Ready condition"
+  return hs
+
+resource.customizations.health.xc.f5.com_APIDefinition: |
+  hs = {}
+  if obj.status == nil or obj.status.conditions == nil then
+    hs.status = "Progressing"
+    hs.message = "Waiting for reconciliation"
+    return hs
+  end
+  for _, c in ipairs(obj.status.conditions) do
+    if c.type == "Ready" and c.status == "True" then
+      hs.status = "Healthy"
+      hs.message = c.reason or ""
+      return hs
+    end
+    if c.type == "Synced" and c.status == "False" then
+      hs.status = "Degraded"
+      hs.message = c.message or c.reason or "Sync failed"
+      return hs
+    end
+  end
+  hs.status = "Progressing"
+  hs.message = "Waiting for Ready condition"
+  return hs
+
+resource.customizations.health.xc.f5.com_UserIdentification: |
+  hs = {}
+  if obj.status == nil or obj.status.conditions == nil then
+    hs.status = "Progressing"
+    hs.message = "Waiting for reconciliation"
+    return hs
+  end
+  for _, c in ipairs(obj.status.conditions) do
+    if c.type == "Ready" and c.status == "True" then
+      hs.status = "Healthy"
+      hs.message = c.reason or ""
+      return hs
+    end
+    if c.type == "Synced" and c.status == "False" then
+      hs.status = "Degraded"
+      hs.message = c.message or c.reason or "Sync failed"
+      return hs
+    end
+  end
+  hs.status = "Progressing"
+  hs.message = "Waiting for Ready condition"
+  return hs
+
+resource.customizations.health.xc.f5.com_MaliciousUserMitigation: |
+  hs = {}
+  if obj.status == nil or obj.status.conditions == nil then
+    hs.status = "Progressing"
+    hs.message = "Waiting for reconciliation"
+    return hs
+  end
+  for _, c in ipairs(obj.status.conditions) do
+    if c.type == "Ready" and c.status == "True" then
+      hs.status = "Healthy"
+      hs.message = c.reason or ""
+      return hs
+    end
+    if c.type == "Synced" and c.status == "False" then
+      hs.status = "Degraded"
+      hs.message = c.message or c.reason or "Sync failed"
+      return hs
+    end
+  end
+  hs.status = "Progressing"
+  hs.message = "Waiting for Ready condition"
+  return hs

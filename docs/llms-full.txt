@@ -946,7 +946,25 @@ Common issues:
 
 ---
 
-## 7. Important Constraints
+## 7. ArgoCD / GitOps
+
+The operator is fully compatible with ArgoCD and GitOps workflows. The operator only writes to `.status`, never mutates `.spec`, so there is no conflict with ArgoCD drift detection. Apply all manifests at once — the operator reconciles with retries, so dependencies resolve automatically regardless of creation order.
+
+### Health Checks
+
+ArgoCD does not know how to assess health for custom resources by default. Without custom health checks, ArgoCD reports all operator-managed resources as "Healthy" immediately, even if they failed to sync to F5 XC. A ready-to-use health check configuration for all 11 CRDs is at `docs/argocd-health-checks.yaml` — merge it into your `argocd-cm` ConfigMap.
+
+### Secret Management
+
+Avoid storing `credentials.apiToken` in plaintext in your ArgoCD Application spec. Use External Secrets Operator, Sealed Secrets, or SOPS to manage the `xc-credentials` Secret. The same applies to TLS Secrets referenced by Certificate CRs.
+
+### Pruning
+
+When ArgoCD prunes a resource (removes it because it was deleted from Git), the operator deletes the corresponding F5 XC resource. To prevent this, annotate resources with `f5xc.io/deletion-policy: orphan` before removing them from Git.
+
+---
+
+## 8. Important Constraints
 
 1. All YAML field names use camelCase (matching Go struct JSON tags), not snake_case.
 2. Resources referencing each other must share the same `xcNamespace`.

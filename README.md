@@ -76,6 +76,7 @@ kubectl get op my-pool
 ## Documentation
 
 - [Helm Values and Configuration](docs/overview.md)
+- [ArgoCD / GitOps Integration](docs/argocd.md)
 - [Development Guide](docs/development.md)
 - [Resource Guides](docs/resources/)
 - [LLM/Agent Operating Guide](docs/llms-full.txt)
